@@ -3,6 +3,7 @@ import com.amazonaws.services.ec2.model.InstanceType;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClient;
 import com.amazonaws.services.elasticmapreduce.model.*;
+import exceptions.AWSCredentialsReaderException;
 
 public class ExampleCode {
 
@@ -10,15 +11,16 @@ public class ExampleCode {
 
     public static void main(String[] args) {
 
-        AWSCredentialsProvider provider ;
+        AWSCredentialsProvider credentialsProvider ;
         try {
-            AwsCredentialsReader credsReader = new AwsCredentialsReader(CREDENTIALS_PATH);
-            provider = credsReader.getCredentialsProvider();
-        } catch (AwsCredentialsReader.CredentialsReaderException e) {
-            throw new RuntimeException(e);
+             credentialsProvider = new AWSCredentialsReader(CREDENTIALS_PATH);
+        } catch (AWSCredentialsReaderException e) {
+            System.out.println(e.getMessage());
+            return;
         }
+
         AmazonElasticMapReduce mapReduce = AmazonElasticMapReduceClient.builder()
-                .withCredentials(provider)
+                .withCredentials(credentialsProvider)
                 .withRegion("us-east-1")
                 .build();
 

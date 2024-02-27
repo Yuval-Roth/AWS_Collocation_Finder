@@ -1,9 +1,9 @@
+package utils;
+
 public class Box<T> {
     private T value;
 
-    public Box() {
-    }
-
+    public Box() {}
     public Box(T value) {
         this.value = value;
     }
