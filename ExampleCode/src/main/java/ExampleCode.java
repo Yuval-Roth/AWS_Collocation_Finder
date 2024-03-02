@@ -9,6 +9,7 @@ import com.amazonaws.services.elasticmapreduce.model.*;
 import com.amazonaws.services.polly.model.InvalidS3KeyException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
@@ -88,20 +89,18 @@ public class ExampleCode {
 
     public static void main(String[] args) {
 
-        s3 = AmazonS3Client.builder()
-                .withRegion(s3_region)
-                .build();
-        ec2 = AmazonEC2Client.builder()
-                .withRegion(ec2_region)
-                .build();
-
         AWSCredentialsProvider credentialsProvider ;
         try {
-             credentialsProvider = new AWSCredentialsReader(CREDENTIALS_PATH);
+            credentialsProvider = new AWSCredentialsReader(CREDENTIALS_PATH);
         } catch (AWSCredentialsReaderException e) {
             System.out.println(e.getMessage());
             return;
         }
+
+        s3 = AmazonS3Client.builder()
+                .withCredentials(credentialsProvider)
+                .withRegion(s3_region)
+                .build();
 
         AmazonElasticMapReduce mapReduce = AmazonElasticMapReduceClient.builder()
                 .withCredentials(credentialsProvider)
@@ -210,11 +209,7 @@ public class ExampleCode {
         contentFileStream.close();
 
         // upload file
-        long newFileSize = downloadedFile.length();
-        ObjectMetadata metadata = new ObjectMetadata();
-        metadata.setContentLength(newFileSize);
-        InputStream input = new BufferedInputStream(new FileInputStream(downloadedFile));
-        s3.putObject(new PutObjectRequest(BUCKET_NAME, "files/"+key, input, metadata));
+        uploadBigFileToS3(key, downloadedFile);
 
         // delete local temporary file
         downloadedFile.delete();
