@@ -8,7 +8,7 @@ import java.io.IOException;
  *      decade,w1,w2 -> w1,w2,count_overall,bigram_count_in_decade,w1_count_in_decade,_
  *      decade,w1,w2 -> w1,w2,count_overall,bigram_count_in_decade,_,w2_count_in_decade
  */
-public class Job3 extends Reducer<Text, Text, Text, Text> {
+public class Step3 extends Reducer<Text, Text, Text, Text> {
 
     private static final int DECADE_KEY_INDEX = 0;
     private static final int W1_KEY_INDEX = 1;

@@ -3,14 +3,13 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 
 import java.io.IOException;
-import java.math.BigInteger;
 
 /**
  * emits the following format:
  *    decade,w1,_ -> w1,w2,count_overall,bigram_count_in_decade
  *    decade,_,w2 -> w1,w2,count_overall,bigram_count_in_decade
  */
-public class Job2 extends Reducer<IntWritable, Text, Text, Text> {
+public class Step2 extends Reducer<IntWritable, Text, Text, Text> {
 
     private static final int W1_VALUE_INDEX = 0;
     private static final int W2_VALUE_INDEX = 1;

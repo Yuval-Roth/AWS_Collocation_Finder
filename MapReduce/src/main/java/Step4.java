@@ -3,7 +3,7 @@ import org.apache.hadoop.mapreduce.Reducer;
 
 import java.io.IOException;
 
-public class Job4 extends Reducer<Text, Text, Text, Text> {
+public class Step4 extends Reducer<Text, Text, Text, Text> {
 
     private static final int DECADE_KEY_INDEX = 0;
     private static final int W1_KEY_INDEX = 1;
@@ -14,6 +14,13 @@ public class Job4 extends Reducer<Text, Text, Text, Text> {
     private static final int BIGRAM_COUNT_IN_DECADE_INDEX = 3;
     private static final int W1_COUNT_IN_DECADE_INDEX = 4;
     private static final int W2_COUNT_IN_DECADE_INDEX = 5;
+
+    private double minPmi;
+
+    @Override
+    protected void setup(Reducer<Text, Text, Text, Text>.Context context) throws IOException, InterruptedException {
+        minPmi = Double.parseDouble(context.getConfiguration().get("minPmi"));
+    }
 
     @Override
     protected void reduce(Text key, Iterable<Text> values, Reducer<Text, Text, Text, Text>.Context context) throws IOException, InterruptedException {
@@ -32,8 +39,11 @@ public class Job4 extends Reducer<Text, Text, Text, Text> {
             String countOverall = valueTokens[COUNT_OVERALL_VALUE_INDEX];
             String bigramCountInDecade = valueTokens[BIGRAM_COUNT_IN_DECADE_INDEX];
             double npmi = calculateNPMI(countOverall, bigramCountInDecade, w1Count, w2Count);
-            context.write(new Text(String.format("%s,%s,%s",
-                    keyTokens[DECADE_KEY_INDEX], w1, w2)), new Text(String.valueOf(npmi)));
+            if (npmi < minPmi) {
+                continue;
+            }
+            context.write(new Text(keyTokens[DECADE_KEY_INDEX]),
+                    new Text("%s,%s,%s".formatted(w1,w2,String.valueOf(npmi))));
         }
     }
 

@@ -1,3 +1,7 @@
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.GetObjectRequest;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
@@ -10,7 +14,7 @@ import java.util.StringTokenizer;
 /**
  * emits the following format: decade -> w1,w2,count_overall
  */
-public class Job1 extends Mapper<Text,Text,IntWritable,Text> {
+public class Step1 extends Mapper<Text,Text,IntWritable,Text> {
 
     private static final int TOKENS_PER_LINE = 5;
     private static final int W1_INDEX = 0;
@@ -20,10 +24,17 @@ public class Job1 extends Mapper<Text,Text,IntWritable,Text> {
     private static final int DISTINCT_BOOKS_COUNT_INDEX = 4;
     private String[] tokens;
     private Set<String> stopWords;
+    public static final String BUCKET_NAME = "distributed-systems-2024-bucket-yuval-adi";
+    private AmazonS3 s3;
 
-    public Job1() {
-        //TODO: LOAD STOP WORDS
-        stopWords = new HashSet<>();
+    @Override
+    protected void setup(Mapper<Text, Text, IntWritable, Text>.Context context) throws IOException, InterruptedException {
+        String stopWordsUrl = context.getConfiguration().get("stopWordsURL");
+        s3 = AmazonS3Client.builder().withRegion(Regions.US_WEST_2).build();
+        String stopWordsStr = downloadSmallFileFromS3(stopWordsUrl);
+        stopWords = new HashSet<>(){{
+            addAll(Set.of(stopWordsStr.split("\n")));
+        }};
     }
 
     @Override
@@ -56,5 +67,22 @@ public class Job1 extends Mapper<Text,Text,IntWritable,Text> {
         int decade = Integer.parseInt(tokens[DECADE_INDEX]);
         decade = (decade / 10) * 10; // round down to nearest decade
         return new IntWritable(decade);
+    }
+
+
+
+    private String downloadSmallFileFromS3(String key) {
+
+        var r = s3.getObject(new GetObjectRequest(BUCKET_NAME, "files/"+key));
+
+        // get file from response
+        byte[] file = {};
+        try {
+            file = r.getObjectContent().readAllBytes();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read file from S3", e);
+        }
+
+        return new String(file);
     }
 }
