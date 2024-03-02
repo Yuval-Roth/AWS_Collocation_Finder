@@ -53,6 +53,8 @@ public class Job1 extends Mapper<Text,Text,IntWritable,Text> {
     }
 
     private IntWritable makeKey() {
-        return new IntWritable(Integer.parseInt(tokens[DECADE_INDEX]));
+        int decade = Integer.parseInt(tokens[DECADE_INDEX]);
+        decade = (decade / 10) * 10; // round down to nearest decade
+        return new IntWritable(decade);
     }
 }

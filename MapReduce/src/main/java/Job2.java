@@ -3,6 +3,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 
 import java.io.IOException;
+import java.math.BigInteger;
 
 /**
  * emits the following format:
@@ -17,17 +18,17 @@ public class Job2 extends Reducer<IntWritable, Text, Text, Text> {
 
     @Override
     protected void reduce(IntWritable key, Iterable<Text> values, Reducer<IntWritable, Text, Text, Text>.Context context) throws IOException, InterruptedException {
-        int bigramCount = 0;
+        long bigramCountInDecade = 0;
         for (Text value : values) {
             String[] valueTokens = value.toString().split(",");
-            bigramCount += Integer.parseInt(valueTokens[COUNT_OVERALL_VALUE_INDEX]);
+            bigramCountInDecade += Long.parseLong(valueTokens[COUNT_OVERALL_VALUE_INDEX]);
         }
         for(Text value : values){
             String[] valueTokens = value.toString().split(",");
             String w1 = valueTokens[W1_VALUE_INDEX];
             String w2 = valueTokens[W2_VALUE_INDEX];
             String countOverall = valueTokens[COUNT_OVERALL_VALUE_INDEX];
-            String valueOut = String.format("%s,%s,%s,%d", w1, w2, countOverall, bigramCount);
+            String valueOut = String.format("%s,%s,%s,%d", w1, w2, countOverall, bigramCountInDecade);
             context.write(new Text(String.format("%d,%s,_", key.get(), w1)), new Text(valueOut));
             context.write(new Text(String.format("%d,_,%s", key.get(), w2)), new Text(valueOut));
         }
