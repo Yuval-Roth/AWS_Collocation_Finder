@@ -72,7 +72,7 @@ public class Step4 {
 
     public static void main(String[] args){
         System.out.println("[DEBUG] STEP 4 started!");
-        readArgs();
+        readArgs(args);
         Configuration conf = new Configuration();
         try {
             Job job = Job.getInstance(conf, "Step4");
