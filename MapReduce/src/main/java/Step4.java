@@ -1,8 +1,8 @@
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -15,7 +15,7 @@ public class Step4 {
 
     private static Path inputPath;
     private static Path outputPath;
-    private static double relMinPmi;
+    private static Double relMinPmi;
 
     /**
      * emits the following format:
@@ -74,6 +74,7 @@ public class Step4 {
         System.out.println("[DEBUG] STEP 4 started!");
         readArgs(args);
         Configuration conf = new Configuration();
+        conf.set("relMinPmi", String.valueOf(relMinPmi));
         try {
             Job job = Job.getInstance(conf, "Step4");
             job.setJarByClass(Step4.class);
@@ -156,7 +157,7 @@ public class Step4 {
             printErrorAndExit("Unknown argument: %s\n".formatted(arg));
         }
 
-        if(relMinPmi < 0){
+        if(relMinPmi == null){
             printErrorAndExit("Argument for relative minimum pmi not found\n");
         }
         if(inputPath == null){

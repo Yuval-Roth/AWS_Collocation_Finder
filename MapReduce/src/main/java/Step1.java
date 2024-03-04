@@ -4,9 +4,9 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -52,6 +52,20 @@ public class Step1 {
                         throw new RuntimeException("Expected " + TOKENS_PER_LINE + " tokens per line, but found " + (i - 1));
                     }
                 }
+
+                // remove tags from words if they exist
+                int index;
+                if ((index = tokens[W1_INDEX].indexOf("_")) != -1){
+                    tokens[W1_INDEX] = tokens[W1_INDEX].substring(0,index);
+                }
+                if ((index = tokens[W2_INDEX].indexOf("_")) != -1){
+                    tokens[W2_INDEX] = tokens[W2_INDEX].substring(0,index);
+                }
+                if(tokens[W1_INDEX].isEmpty() || tokens[W2_INDEX].isEmpty()){
+                    continue;
+                }
+
+                // skip stop words
                 if (stopWords.contains(tokens[W1_INDEX]) || stopWords.contains(tokens[W2_INDEX])) {
                     continue;
                 }

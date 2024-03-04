@@ -1,8 +1,8 @@
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -15,7 +15,7 @@ public class Step3 {
 
     private static Path inputPath;
     private static Path outputPath;
-    private static double minPmi;
+    private static Double minPmi;
 
     private static final int W1_VALUE_INDEX = 0;
     private static final int W2_VALUE_INDEX = 1;
@@ -51,7 +51,6 @@ public class Step3 {
         private static final int BIGRAM_COUNT_IN_DECADE_INDEX = 3;
         private static final int W1_COUNT_IN_DECADE_INDEX = 4;
         private static final int W2_COUNT_IN_DECADE_INDEX = 5;
-
         private double minPmi;
 
         @Override
@@ -97,6 +96,7 @@ public class Step3 {
         System.out.println("[DEBUG] STEP 3 started!");
         readArgs(args);
         Configuration conf = new Configuration();
+        conf.set("minPmi", String.valueOf(minPmi));
         try {
             Job job = Job.getInstance(conf, "Step3");
             job.setJarByClass(Step3.class);
@@ -179,7 +179,7 @@ public class Step3 {
             printErrorAndExit("Unknown argument: %s\n".formatted(arg));
         }
 
-        if(minPmi < 0){
+        if(minPmi == null){
             printErrorAndExit("Argument for minimum pmi not found\n");
         }
         if(inputPath == null){
