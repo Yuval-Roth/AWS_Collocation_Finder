@@ -1,58 +1,178 @@
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 
-public class Step4 extends Reducer<Text, Text, Text, Text> {
+public class Step4 {
 
-    private static final int DECADE_KEY_INDEX = 0;
-    private static final int W1_KEY_INDEX = 1;
-    private static final int W2_KEY_INDEX = 2;
-    private static final int W1_VALUE_INDEX = 0;
-    private static final int W2_VALUE_INDEX = 1;
-    private static final int COUNT_OVERALL_VALUE_INDEX = 2;
-    private static final int BIGRAM_COUNT_IN_DECADE_INDEX = 3;
-    private static final int W1_COUNT_IN_DECADE_INDEX = 4;
-    private static final int W2_COUNT_IN_DECADE_INDEX = 5;
+    private static Path inputPath;
+    private static Path outputPath;
+    private static double relMinPmi;
 
-    private double minPmi;
+    /**
+     * emits the following format:
+     *      decade -> w1,w2,npmi
+     */
+    public static class RelNPMIMapper extends Mapper<Text, Text, Text, Text> {
 
-    @Override
-    protected void setup(Reducer<Text, Text, Text, Text>.Context context) throws IOException, InterruptedException {
-        minPmi = Double.parseDouble(context.getConfiguration().get("minPmi"));
+        private static final int DECADE_KEY_INDEX = 0;
+
+        @Override
+        protected void map(Text key, Text value, Mapper<Text, Text, Text, Text>.Context context) throws IOException, InterruptedException {
+            String[] keyTokens = key.toString().split(",");
+            context.write(new Text(keyTokens[DECADE_KEY_INDEX]),value);
+        }
     }
 
-    @Override
-    protected void reduce(Text key, Iterable<Text> values, Reducer<Text, Text, Text, Text>.Context context) throws IOException, InterruptedException {
-        String[] keyTokens = key.toString().split(",");
-        int w1Count = 0;
-        int w2Count = 0;
-        for (Text value : values) {
-            String[] valueTokens = value.toString().split(",");
-            w1Count += valueTokens[W1_COUNT_IN_DECADE_INDEX].equals("_") ? 0 : Integer.parseInt(valueTokens[W1_COUNT_IN_DECADE_INDEX]);
-            w2Count += valueTokens[W2_COUNT_IN_DECADE_INDEX].equals("_") ? 0 : Integer.parseInt(valueTokens[W2_COUNT_IN_DECADE_INDEX]);
+    /**
+     * emits the following format:
+     *      decade,npmi,w1,w2 -> ""
+     */
+    public class RelNPMIReducer extends Reducer<Text, Text, Text, Text> {
+
+        private static final int W1_VALUE_INDEX = 0;
+        private static final int W2_VALUE_INDEX = 1;
+        private static final int NPMI_VALUE_INDEX = 2;
+        private double relMinPmi;
+
+        @Override
+        protected void setup(Reducer<Text, Text, Text, Text>.Context context) throws IOException, InterruptedException {
+            relMinPmi = Double.parseDouble(context.getConfiguration().get("relMinPmi"));
         }
-        for(Text value : values) {
-            String[] valueTokens = value.toString().split(",");
-            String w1 = valueTokens[W1_VALUE_INDEX];
-            String w2 = valueTokens[W2_VALUE_INDEX];
-            String countOverall = valueTokens[COUNT_OVERALL_VALUE_INDEX];
-            String bigramCountInDecade = valueTokens[BIGRAM_COUNT_IN_DECADE_INDEX];
-            double npmi = calculateNPMI(countOverall, bigramCountInDecade, w1Count, w2Count);
-            if (npmi < minPmi) {
-                continue;
+
+        @Override
+        protected void reduce(Text key, Iterable<Text> values, Reducer<Text, Text, Text, Text>.Context context) throws IOException, InterruptedException {
+            String decade = key.toString();
+            double npmiTotal = 0;
+            for(Text value : values){
+                String[] valueTokens = value.toString().split(",");
+                npmiTotal += Double.parseDouble(valueTokens[NPMI_VALUE_INDEX]);
             }
-            context.write(new Text(keyTokens[DECADE_KEY_INDEX]),
-                    new Text("%s,%s,%s".formatted(w1,w2,String.valueOf(npmi))));
+            for (Text value : values) {
+                String[] valueTokens = value.toString().split(",");
+                String w1 = valueTokens[W1_VALUE_INDEX];
+                String w2 = valueTokens[W2_VALUE_INDEX];
+                double npmi = Double.parseDouble(valueTokens[NPMI_VALUE_INDEX]);
+                double relNpmi = npmi / npmiTotal;
+                if (relNpmi < relMinPmi) {
+                    continue;
+                }
+                context.write(new Text("%s,%f,%s,%s".formatted(decade,npmi,w1,w2)), new Text(""));
+            }
         }
     }
 
-    private double calculateNPMI(String countOverall, String bigramCountInDecade, int w1Count, int w2Count) {
-        double c_w1_w2 = Double.parseDouble(countOverall);
-        double c_w1 = w1Count;
-        double c_w2 = w2Count;
-        double N = Double.parseDouble(bigramCountInDecade);
-        double pmi = Math.log(c_w1_w2) + Math.log(N) - Math.log(c_w1) - Math.log(c_w2);
-        return -1 * pmi / Math.log(c_w1_w2 / N);
+    public static void main(String[] args){
+        System.out.println("[DEBUG] STEP 4 started!");
+        readArgs();
+        Configuration conf = new Configuration();
+        try {
+            Job job = Job.getInstance(conf, "Step4");
+            job.setJarByClass(Step4.class);
+            job.setMapperClass(Step4.RelNPMIMapper.class);
+            job.setPartitionerClass(DecadesPartitioner.class);
+            job.setReducerClass(Step4.RelNPMIReducer.class);
+            job.setMapOutputKeyClass(Text.class);
+            job.setMapOutputValueClass(Text.class);
+            job.setOutputKeyClass(Text.class);
+            job.setOutputValueClass(Text.class);
+            FileInputFormat.addInputPath(job, inputPath);
+            FileOutputFormat.setOutputPath(job, outputPath);
+            System.exit(job.waitForCompletion(true) ? 0 : 1);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void readArgs(String[] args) {
+        relMinPmi = -1.0;
+        List<String> argsList = new LinkedList<>();
+        argsList.add("-relminpmi");
+        argsList.add("-inputurl");
+        argsList.add("-outputurl");
+        for (int i = 0; i < args.length; i++) {
+            String arg = args[i].toLowerCase();
+            String errorMessage;
+            if (arg.equals("-relminpmi")) {
+                errorMessage = "Missing relative minimum pmi\n";
+                try{
+                    if(argsList.contains(args[i+1])){
+                        printErrorAndExit(errorMessage);
+                    }
+                    try{
+                        relMinPmi = Double.parseDouble(args[i+1]);
+                    } catch (NumberFormatException e2){
+                        System.out.println();
+                        printErrorAndExit("Invalid relative minimum pmi\n");
+                    }
+                    if(relMinPmi <= 0) {
+                        System.out.println();
+                        printErrorAndExit("Invalid relative minimum pmi\n");
+                    }
+                    i++;
+                    continue;
+                } catch (IndexOutOfBoundsException e){
+                    System.out.println();
+                    printErrorAndExit(errorMessage);
+                }
+            }
+            if (arg.equals("-inputurl")) {
+                errorMessage = "Missing input url\n";
+                try{
+                    if(argsList.contains(args[i+1])){
+                        printErrorAndExit(errorMessage);
+                    }
+                    inputPath = new Path(args[i+1]);
+                    i++;
+                    continue;
+                } catch (IndexOutOfBoundsException e){
+                    System.out.println();
+                    printErrorAndExit(errorMessage);
+                }
+            }
+            if (arg.equals("-outputurl")) {
+                errorMessage = "Missing output url\n";
+                try{
+                    if(argsList.contains(args[i+1])){
+                        printErrorAndExit(errorMessage);
+                    }
+                    outputPath = new Path(args[i+1]);
+                    i++;
+                    continue;
+                } catch (IndexOutOfBoundsException e){
+                    System.out.println();
+                    printErrorAndExit(errorMessage);
+                }
+            }
+            System.out.println();
+            printErrorAndExit("Unknown argument: %s\n".formatted(arg));
+        }
+
+        if(relMinPmi < 0){
+            printErrorAndExit("Argument for relative minimum pmi not found\n");
+        }
+        if(inputPath == null){
+            printErrorAndExit("Argument for input url not found\n");
+        }
+        if(outputPath == null){
+            printErrorAndExit("Argument for output url not found\n");
+        }
+    }
+
+    private static void printErrorAndExit(String errorMessage) {
+        if(! errorMessage.equals("")) {
+            System.out.println(errorMessage);
+        }
+        System.exit(1);
     }
 }
+
+
