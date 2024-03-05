@@ -30,8 +30,6 @@
             <artifactId>aws-java-sdk-emr</artifactId>
             <version>1.12.666</version>
         </dependency>
-
-
         <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>aws-java-sdk-core</artifactId>
@@ -47,17 +45,6 @@
             <artifactId>aws-java-sdk-ec2</artifactId>
             <version>1.12.666</version>
         </dependency>
-        <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-polly</artifactId>
-            <version>1.12.666</version>
-        </dependency>
-        <dependency>
-            <groupId>com.amazonaws</groupId>
-            <artifactId>aws-java-sdk-lambda</artifactId>
-            <version>1.12.666</version>
-        </dependency>
-
     </dependencies>
 
     <build>
