@@ -3,12 +3,9 @@ import com.amazonaws.services.ec2.model.InstanceType;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClient;
 import com.amazonaws.services.elasticmapreduce.model.*;
-import examples.ExampleCode;
 import exceptions.AWSCredentialsReaderException;
-import org.apache.hadoop.fs.Path;
 import utils.AWSCredentialsReader;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
@@ -26,7 +23,6 @@ public class CollocationFinder {
     public static final String HADOOP_OUTPUTS_URL = BUCKET_URL + "hadoop/outputs/";
     public static final String JAR_STEP_ARGS = "%s -inputUrl %s -outputUrl %s";
     private static final String CREDENTIALS_PATH = getFolderPath() + "credentials.txt";
-    private static final String CLASS_NAME = "CollocationFinder";
     private static final String STOP_WORDS_URL = BUCKET_URL+"hadoop/stop_words.txt";
     private static final String USAGE = ""; // TODO: WRITE USAGE
     public static String inputUrl;
@@ -53,23 +49,24 @@ public class CollocationFinder {
                 .withRegion("us-east-1")
                 .build();
 
-        List<StepConfig> stepConfigs = new ArrayList<>(4);
+        List<StepConfig> stepConfigs = new LinkedList<>();
         String[] firstArg = {
-                STOP_WORDS_URL,
+                "-stopWordsUrl "+STOP_WORDS_URL,
                 "",
-                String.valueOf(minPmi),
-                String.valueOf(relMinPmi)
+                "-minPmi "+minPmi,
+                "-relMinPmi "+relMinPmi
         };
         String output = HADOOP_OUTPUTS_URL + UUID.randomUUID();
         String input = inputUrl;
         for(int i = 1 ; i <= 4 ; i++){
-             HadoopJarStepConfig step = new HadoopJarStepConfig()
+            String _args = JAR_STEP_ARGS.formatted(firstArg[i - 1], input, output);
+            HadoopJarStepConfig step = new HadoopJarStepConfig()
                     .withJar(HADOOP_JARS_URL+"step"+ i + ".jar")
                     .withMainClass("Step" + i)
-                    .withArgs(JAR_STEP_ARGS.formatted(firstArg[i-1], input ,output).split(" "));
+                    .withArgs(_args.split(" "));
             input = output;
             output = HADOOP_OUTPUTS_URL + UUID.randomUUID();
-            stepConfigs.set(i-1, new StepConfig()
+            stepConfigs.add(new StepConfig()
                     .withName("step"+i)
                     .withHadoopJarStep(step)
                     .withActionOnFailure("TERMINATE_JOB_FLOW"));
@@ -100,7 +97,7 @@ public class CollocationFinder {
     }
 
     private static String getFolderPath() {
-        String folderPath = ExampleCode.class.getResource("%s.class".formatted(CLASS_NAME)).getPath();
+        String folderPath = CollocationFinder.class.getResource("CollocationFinder.class").getPath();
         folderPath = folderPath.replace("%20"," "); //fix space character
         folderPath = folderPath.substring(folderPath.indexOf("/")+1); // remove initial '/'
         folderPath = folderPath.substring(0,folderPath.lastIndexOf("/")); // remove .class file from path
@@ -119,7 +116,7 @@ public class CollocationFinder {
     private static void readArgs(String[] args) {
 
         List<String> argsList = new LinkedList<>();
-        argsList.add("-outputurl");
+        argsList.add("-inputurl");
         argsList.add("-minpmi");
         argsList.add("-relminpmi");
         for (int i = 0; i < args.length; i++) {

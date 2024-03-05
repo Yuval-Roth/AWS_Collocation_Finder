@@ -5,7 +5,7 @@ import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.BasicSessionCredentials;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
-import com.amazonaws.services.lambda.model.EC2AccessDeniedException;
+import com.amazonaws.services.ec2.model.AmazonEC2Exception;
 import exceptions.AWSCredentialsReaderException;
 
 import java.io.BufferedReader;
@@ -39,7 +39,7 @@ public class AWSCredentialsReader implements AWSCredentialsProvider {
                 throw new AWSCredentialsReaderException("""
                         Credentials file not found.
                         Make sure the credentials file exists in the following path:
-                        %s""");
+                        %s""".formatted(pathToCredentials));
             }
             throw new RuntimeException(e);
         }
@@ -64,7 +64,7 @@ public class AWSCredentialsReader implements AWSCredentialsProvider {
                     .withRegion("us-east-1")
                     .build();
             ec2Client.describeInstances();
-        } catch (EC2AccessDeniedException e) {
+        } catch (AmazonEC2Exception e) {
             throw new AWSCredentialsReaderException("""
                     Credentials were rejected by AWS.
                     Please make sure the credentials are up to date.""");

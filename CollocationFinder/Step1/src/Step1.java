@@ -11,6 +11,7 @@ import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
+
 import java.io.IOException;
 import java.util.*;
 
@@ -204,8 +205,6 @@ public class Step1 {
                     printErrorAndExit(errorMessage);
                 }
             }
-            System.out.println();
-            printErrorAndExit("Unknown argument: %s\n".formatted(arg));
         }
 
         if(stopWordsUrl == null){

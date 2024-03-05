@@ -153,8 +153,6 @@ public class Step4 {
                     printErrorAndExit(errorMessage);
                 }
             }
-            System.out.println();
-            printErrorAndExit("Unknown argument: %s\n".formatted(arg));
         }
 
         if(relMinPmi == null){

@@ -175,8 +175,6 @@ public class Step3 {
                     printErrorAndExit(errorMessage);
                 }
             }
-            System.out.println();
-            printErrorAndExit("Unknown argument: %s\n".formatted(arg));
         }
 
         if(minPmi == null){

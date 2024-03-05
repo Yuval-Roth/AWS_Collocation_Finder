@@ -137,8 +137,6 @@ public class Step2 {
                     printErrorAndExit(errorMessage);
                 }
             }
-            System.out.println();
-            printErrorAndExit("Unknown argument: %s\n".formatted(arg));
         }
         if(inputPath == null){
             printErrorAndExit("Argument for input url not found\n");
