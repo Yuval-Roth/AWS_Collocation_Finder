@@ -7,11 +7,12 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="CollocationFinder" />
-        <module name="Step2" />
+        <module name="Main" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="Step1" target="17" />
+      <module name="Step2" target="17" />
     </bytecodeTargetLevel>
   </component>
 </project>

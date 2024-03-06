@@ -6,6 +6,8 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import utils.DecadesPartitioner;
+import utils.DescendingComparator;
 
 import java.io.IOException;
 import java.util.LinkedList;
@@ -81,6 +83,7 @@ public class Step4 {
             job.setMapperClass(Step4.RelNPMIMapper.class);
             job.setPartitionerClass(DecadesPartitioner.class);
             job.setReducerClass(Step4.RelNPMIReducer.class);
+            job.setSortComparatorClass(DescendingComparator.class);
             job.setMapOutputKeyClass(Text.class);
             job.setMapOutputValueClass(Text.class);
             job.setOutputKeyClass(Text.class);

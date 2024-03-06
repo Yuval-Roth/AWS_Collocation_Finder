@@ -1,8 +1,7 @@
 <component name="ArtifactManager">
-  <artifact type="jar" name="step3:jar">
+  <artifact type="jar" name="main:jar">
     <output-path>$PROJECT_DIR$/out/artifacts</output-path>
-    <root id="archive" name="step3.jar">
-      <element id="module-output" name="step3" />
+    <root id="archive" name="main.jar">
       <element id="module-output" name="main" />
       <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/apache/hadoop/hadoop-mapreduce-client-core/3.3.6/hadoop-mapreduce-client-core-3.3.6.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$MAVEN_REPOSITORY$/org/apache/hadoop/hadoop-yarn-client/3.3.6/hadoop-yarn-client-3.3.6.jar" path-in-jar="/" />

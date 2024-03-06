@@ -23,7 +23,7 @@ public class CollocationFinder {
     public static final String HADOOP_OUTPUTS_URL = BUCKET_URL + "hadoop/outputs/";
     public static final String JAR_STEP_ARGS = "%s -inputUrl %s -outputUrl %s";
     private static final String CREDENTIALS_PATH = getFolderPath() + "credentials.txt";
-    private static final String STOP_WORDS_URL = "hadoop/stop_words.txt";
+    private static final String STOP_WORDS_URL = BUCKET_URL+"hadoop/stop_words.txt";
     private static final String USAGE = ""; // TODO: WRITE USAGE
     public static String inputUrl;
     public static String outputUrl;
