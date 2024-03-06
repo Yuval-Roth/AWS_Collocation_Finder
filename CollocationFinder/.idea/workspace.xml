@@ -52,6 +52,7 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "Application.CollocationFinder.executor": "Run",
     "Application.Step1.executor": "Debug",
     "Downloaded.Files.Path.Enabled": "false",
     "Repository.Attach.Annotations": "false",
@@ -63,6 +64,7 @@
     "git-widget-placeholder": "main",
     "jdk.selected.JAVA_MODULE": "corretto-17",
     "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/Yuval/git/Distributed_systems_assignment_2/CollocationFinder/out/production",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -75,6 +77,9 @@
   }
 }]]></component>
   <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\Yuval\git\Distributed_systems_assignment_2\CollocationFinder\out\production" />
+    </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\Users\Yuval\git\Distributed_systems_assignment_2\CollocationFinder\out\artifacts" />
       <recent name="C:\Users\Yuval\git\Distributed_systems_assignment_2\CollocationFinder\Job4\src" />
@@ -124,7 +129,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1709721733805</updated>
-      <workItem from="1709721734861" duration="4054000" />
+      <workItem from="1709721734861" duration="4879000" />
     </task>
     <servers />
   </component>

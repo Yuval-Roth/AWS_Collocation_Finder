@@ -31,7 +31,7 @@ public class Step1 {
 
     private static Path inputPath;
     private static Path outputPath;
-    private static String stopWordsUrl;
+    private static String stopWordsFile;
 
 
     /**
@@ -81,9 +81,9 @@ public class Step1 {
 
         @Override
         protected void setup(Mapper<Text, Text, Text, Text>.Context context) throws IOException, InterruptedException {
-            String stopWordsUrl = context.getConfiguration().get("stopWordsURL");
+            String stopWordsFile = context.getConfiguration().get("stopWordsFile");
             s3 = AmazonS3Client.builder().withRegion(Regions.US_WEST_2).build();
-            String stopWordsStr = downloadSmallFileFromS3(stopWordsUrl);
+            String stopWordsStr = downloadSmallFileFromS3(stopWordsFile);
             stopWords = new HashSet<>() {{
                 addAll(Set.of(stopWordsStr.split("\n")));
             }};
@@ -91,7 +91,7 @@ public class Step1 {
 
         private String downloadSmallFileFromS3(String key) {
 
-            var r = s3.getObject(new GetObjectRequest(BUCKET_NAME, "files/"+key));
+            var r = s3.getObject(new GetObjectRequest(BUCKET_NAME, "hadoop/"+key));
 
             // get file from response
             byte[] file = {};
@@ -137,7 +137,7 @@ public class Step1 {
         System.out.println("[DEBUG] STEP 1 started!");
         readArgs(args);
         Configuration conf = new Configuration();
-        conf.set("stopWordsURL", stopWordsUrl);
+        conf.set("stopWordsFile", stopWordsFile);
         try {
             Job job = Job.getInstance(conf, "Step1");
             job.setJarByClass(Step1.class);
@@ -158,19 +158,19 @@ public class Step1 {
 
     private static void readArgs(String[] args) {
         List<String> argsList = new LinkedList<>();
-        argsList.add("-stopwordsurl");
+        argsList.add("-stopwordsfile");
         argsList.add("-inputurl");
         argsList.add("-outputurl");
         for (int i = 0; i < args.length; i++) {
             String arg = args[i].toLowerCase();
             String errorMessage;
-            if (arg.equals("-stopwordsurl")) {
-                errorMessage = "Missing stop words url\n";
+            if (arg.equals("-stopwordsfile")) {
+                errorMessage = "Missing stop words file\n";
                 try{
                     if(argsList.contains(args[i+1])){
                         printErrorAndExit(errorMessage);
                     }
-                    stopWordsUrl = args[i+1];
+                    stopWordsFile = args[i+1];
                     i++;
                     continue;
                 } catch (IndexOutOfBoundsException e){
@@ -208,8 +208,8 @@ public class Step1 {
             }
         }
 
-        if(stopWordsUrl == null){
-            printErrorAndExit("Argument for stop words url not found\n");
+        if(stopWordsFile == null){
+            printErrorAndExit("Argument for stop words file not found\n");
         }
         if(inputPath == null){
             printErrorAndExit("Argument for input url not found\n");
