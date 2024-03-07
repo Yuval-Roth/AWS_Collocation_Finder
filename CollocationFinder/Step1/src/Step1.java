@@ -58,14 +58,16 @@ public class Step1 {
                 // remove tags from words if they exist
                 int index;
                 if ((index = tokens[W1_INDEX].indexOf("_")) != -1){
-                    tokens[W1_INDEX] = tokens[W1_INDEX].substring(0,index);
-                }
-                if ((index = tokens[W2_INDEX].indexOf("_")) != -1){
-                    tokens[W2_INDEX] = tokens[W2_INDEX].substring(0,index);
-                }
-                if(tokens[W1_INDEX].isEmpty() || tokens[W2_INDEX].isEmpty()){
+//                    tokens[W1_INDEX] = tokens[W1_INDEX].substring(0,index);
                     continue;
                 }
+                if ((index = tokens[W2_INDEX].indexOf("_")) != -1){
+//                    tokens[W2_INDEX] = tokens[W2_INDEX].substring(0,index);
+                    continue;
+                }
+//                if(tokens[W1_INDEX].isEmpty() || tokens[W2_INDEX].isEmpty()){
+//                    continue;
+//                }
 
                 // skip stop words
                 if (stopWords.contains(tokens[W1_INDEX]) || stopWords.contains(tokens[W2_INDEX])) {
