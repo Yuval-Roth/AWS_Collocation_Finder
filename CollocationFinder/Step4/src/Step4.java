@@ -10,6 +10,7 @@ import utils.DecadesPartitioner;
 import utils.DescendingComparator;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -38,7 +39,7 @@ public class Step4 {
      * emits the following format:
      *      decade,npmi,w1,w2 -> ""
      */
-    public class RelNPMIReducer extends Reducer<Text, Text, Text, Text> {
+    public static class RelNPMIReducer extends Reducer<Text, Text, Text, Text> {
 
         private static final int W1_VALUE_INDEX = 0;
         private static final int W2_VALUE_INDEX = 1;
@@ -92,12 +93,11 @@ public class Step4 {
             FileOutputFormat.setOutputPath(job, outputPath);
             System.exit(job.waitForCompletion(true) ? 0 : 1);
         } catch (Exception e) {
-            e.printStackTrace();
+            handleException(e);
         }
     }
 
     private static void readArgs(String[] args) {
-        relMinPmi = -1.0;
         List<String> argsList = new LinkedList<>();
         argsList.add("-relminpmi");
         argsList.add("-inputurl");
@@ -117,7 +117,7 @@ public class Step4 {
                         System.out.println();
                         printErrorAndExit("Invalid relative minimum pmi\n");
                     }
-                    if(relMinPmi <= 0) {
+                    if(relMinPmi < 0) {
                         System.out.println();
                         printErrorAndExit("Invalid relative minimum pmi\n");
                     }
@@ -167,6 +167,33 @@ public class Step4 {
         if(outputPath == null){
             printErrorAndExit("Argument for output url not found\n");
         }
+    }
+
+    private static void handleException(Exception e) {
+        LocalDateTime now = LocalDateTime.now();
+        String timeStamp = getTimeStamp(now);
+        String stackTrace = stackTraceToString(e);
+        System.err.println("[%s] Exception occurred:\n%s".formatted(timeStamp, stackTrace));
+        throw new RuntimeException(e);
+    }
+
+    private static String getTimeStamp(LocalDateTime now) {
+        return "[%s.%s.%s - %s:%s:%s]".formatted(
+                now.getDayOfMonth() > 9 ? now.getDayOfMonth() : "0"+ now.getDayOfMonth(),
+                now.getMonthValue() > 9 ? now.getMonthValue() : "0"+ now.getMonthValue(),
+                now.getYear(),
+                now.getHour() > 9 ? now.getHour() : "0"+ now.getHour(),
+                now.getMinute() > 9 ? now.getMinute() : "0"+ now.getMinute(),
+                now.getSecond() > 9 ? now.getSecond() : "0"+ now.getSecond());
+    }
+
+    private static String stackTraceToString(Exception e) {
+        StringBuilder output  = new StringBuilder();
+        output.append(e).append("\n");
+        for (var element: e.getStackTrace()) {
+            output.append("\t").append(element).append("\n");
+        }
+        return output.toString();
     }
 
     private static void printErrorAndExit(String errorMessage) {

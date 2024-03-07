@@ -18,7 +18,7 @@ public class CollocationFinder {
     // </S3>
 
     // <APPLICATION DATA>
-    private static final int INSTANCE_COUNT = 7;
+    private static final int INSTANCE_COUNT = 1;
     public static final String HADOOP_JARS_URL = BUCKET_URL + "hadoop/jars/";
     public static final String HADOOP_OUTPUTS_URL = BUCKET_URL + "hadoop/outputs/";
     public static final String JAR_STEP_ARGS = "%s -inputUrl %s -outputUrl %s";
@@ -66,13 +66,13 @@ public class CollocationFinder {
                     .withArgs(_args.split(" "));
             input = output;
             output = HADOOP_OUTPUTS_URL + UUID.randomUUID();
+            System.out.println("output file for step "+i+" will be located at "+ output);
             stepConfigs.add(new StepConfig()
                     .withName("step"+i)
                     .withHadoopJarStep(step)
                     .withActionOnFailure("TERMINATE_JOB_FLOW"));
         }
-        outputUrl = output;
-        System.out.println("output file will be located at "+ outputUrl);
+        System.out.println("\nfinal output file will be located at "+ output);
 
         JobFlowInstancesConfig instances = new JobFlowInstancesConfig()
                 .withInstanceCount(INSTANCE_COUNT)

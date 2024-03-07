@@ -4,6 +4,7 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -37,13 +38,13 @@ public class Step1 {
     /**
      * emits the following format: decade -> w1,w2,count_overall
      */
-    public static class TokenizerMapper extends Mapper<Text, Text, Text, Text> {
+    public static class TokenizerMapper extends Mapper<LongWritable, Text, Text, Text> {
 
         private Set<String> stopWords;
         private AmazonS3 s3;
 
         @Override
-        protected void map(Text key, Text value, Mapper<Text, Text, Text, Text>.Context context) throws IOException, InterruptedException {
+        protected void map(LongWritable key, Text value, Mapper<LongWritable, Text, Text, Text>.Context context) throws IOException, InterruptedException {
             StringTokenizer tokenizer = new StringTokenizer(value.toString());
             String[] tokens = new String[TOKENS_PER_LINE];
             while (tokenizer.hasMoreTokens()) {
@@ -58,16 +59,16 @@ public class Step1 {
                 // remove tags from words if they exist
                 int index;
                 if ((index = tokens[W1_INDEX].indexOf("_")) != -1){
-//                    tokens[W1_INDEX] = tokens[W1_INDEX].substring(0,index);
+                    tokens[W1_INDEX] = tokens[W1_INDEX].substring(0,index);
                     continue;
                 }
                 if ((index = tokens[W2_INDEX].indexOf("_")) != -1){
-//                    tokens[W2_INDEX] = tokens[W2_INDEX].substring(0,index);
+                    tokens[W2_INDEX] = tokens[W2_INDEX].substring(0,index);
                     continue;
                 }
-//                if(tokens[W1_INDEX].isEmpty() || tokens[W2_INDEX].isEmpty()){
-//                    continue;
-//                }
+                if(tokens[W1_INDEX].isEmpty() || tokens[W2_INDEX].isEmpty()){
+                    continue;
+                }
 
                 // skip stop words
                 if (stopWords.contains(tokens[W1_INDEX]) || stopWords.contains(tokens[W2_INDEX])) {
@@ -82,13 +83,12 @@ public class Step1 {
         }
 
         @Override
-        protected void setup(Mapper<Text, Text, Text, Text>.Context context) throws IOException, InterruptedException {
+        protected void setup(Mapper<LongWritable, Text, Text, Text>.Context context) throws IOException, InterruptedException {
             String stopWordsFile = context.getConfiguration().get("stopWordsFile");
             s3 = AmazonS3Client.builder().withRegion(Regions.US_WEST_2).build();
             String stopWordsStr = downloadSmallFileFromS3(stopWordsFile);
-            stopWords = new HashSet<>() {{
-                addAll(Set.of(stopWordsStr.split("\n")));
-            }};
+            stopWords = new HashSet<>();
+            stopWordsStr.lines().forEach(stopWords::add);
         }
 
         private String downloadSmallFileFromS3(String key) {
