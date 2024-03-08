@@ -120,6 +120,7 @@ public class CollocationFinder {
         argsList.add("-inputurl");
         argsList.add("-minpmi");
         argsList.add("-relminpmi");
+        argsList.add("-debug");
         for (int i = 0; i < args.length; i++) {
             String arg = args[i].toLowerCase();
             String errorMessage;
