@@ -21,6 +21,7 @@ public class Step3 {
 
     private static final int W1_VALUE_INDEX = 0;
     private static final int W2_VALUE_INDEX = 1;
+    private static boolean debug;
 
     /**
      * emits the following format:
@@ -53,12 +54,6 @@ public class Step3 {
         private static final int BIGRAM_COUNT_IN_DECADE_INDEX = 3;
         private static final int W1_COUNT_IN_DECADE_INDEX = 4;
         private static final int W2_COUNT_IN_DECADE_INDEX = 5;
-        private double minPmi;
-
-        @Override
-        protected void setup(Reducer<Text, Text, Text, Text>.Context context) throws IOException, InterruptedException {
-            minPmi = Double.parseDouble(context.getConfiguration().get("minPmi"));
-        }
 
         @Override
         protected void reduce(Text key, Iterable<Text> values, Reducer<Text, Text, Text, Text>.Context context) throws IOException, InterruptedException {
@@ -98,7 +93,6 @@ public class Step3 {
         System.out.println("[DEBUG] STEP 3 started!");
         readArgs(args);
         Configuration conf = new Configuration();
-        conf.set("minPmi", String.valueOf(minPmi));
         try {
             Job job = Job.getInstance(conf, "Step3");
             job.setJarByClass(Step3.class);
@@ -118,14 +112,18 @@ public class Step3 {
     }
 
     private static void readArgs(String[] args) {
-        minPmi = -1.0;
         List<String> argsList = new LinkedList<>();
         argsList.add("-minpmi");
         argsList.add("-inputurl");
         argsList.add("-outputurl");
+        argsList.add("-debug");
         for (int i = 0; i < args.length; i++) {
             String arg = args[i].toLowerCase();
             String errorMessage;
+            if(arg.equals("-debug")){
+                debug = true;
+                continue;
+            }
             if (arg.equals("-minpmi")) {
                 errorMessage = "Missing minimum pmi\n";
                 try{

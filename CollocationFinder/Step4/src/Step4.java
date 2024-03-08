@@ -19,6 +19,7 @@ public class Step4 {
     private static Path inputPath;
     private static Path outputPath;
     private static Double relMinPmi;
+    private static boolean debug;
 
     /**
      * emits the following format:
@@ -44,12 +45,6 @@ public class Step4 {
         private static final int W1_VALUE_INDEX = 0;
         private static final int W2_VALUE_INDEX = 1;
         private static final int NPMI_VALUE_INDEX = 2;
-        private double relMinPmi;
-
-        @Override
-        protected void setup(Reducer<Text, Text, Text, Text>.Context context) throws IOException, InterruptedException {
-            relMinPmi = Double.parseDouble(context.getConfiguration().get("relMinPmi"));
-        }
 
         @Override
         protected void reduce(Text key, Iterable<Text> values, Reducer<Text, Text, Text, Text>.Context context) throws IOException, InterruptedException {
@@ -77,7 +72,6 @@ public class Step4 {
         System.out.println("[DEBUG] STEP 4 started!");
         readArgs(args);
         Configuration conf = new Configuration();
-        conf.set("relMinPmi", String.valueOf(relMinPmi));
         try {
             Job job = Job.getInstance(conf, "Step4");
             job.setJarByClass(Step4.class);
@@ -102,9 +96,14 @@ public class Step4 {
         argsList.add("-relminpmi");
         argsList.add("-inputurl");
         argsList.add("-outputurl");
+        argsList.add("-debug");
         for (int i = 0; i < args.length; i++) {
             String arg = args[i].toLowerCase();
             String errorMessage;
+            if(arg.equals("-debug")){
+                debug = true;
+                continue;
+            }
             if (arg.equals("-relminpmi")) {
                 errorMessage = "Missing relative minimum pmi\n";
                 try{

@@ -30,6 +30,7 @@ public class Step1 {
     private static final String BUCKET_NAME = "distributed-systems-2024-bucket-yuval-adi";
 
 
+    private static boolean debug;
     private static Path inputPath;
     private static Path outputPath;
     private static String stopWordsFile;
@@ -45,46 +46,53 @@ public class Step1 {
 
         @Override
         protected void map(LongWritable key, Text value, Mapper<LongWritable, Text, Text, Text>.Context context) throws IOException, InterruptedException {
+            StringBuilder toLog = new StringBuilder("[Mapper] Processing line: ").append(value);
             StringTokenizer tokenizer = new StringTokenizer(value.toString());
             String[] tokens = new String[TOKENS_PER_LINE];
-            while (tokenizer.hasMoreTokens()) {
-                for (int i = 0; i < TOKENS_PER_LINE; i++) {
-                    if (tokenizer.hasMoreTokens()) {
-                        tokens[i] = tokenizer.nextToken();
-                    } else {
-                        throw new RuntimeException("Expected " + TOKENS_PER_LINE + " tokens per line, but found " + (i - 1));
-                    }
+            for (int i = 0; i < TOKENS_PER_LINE; i++) {
+                if (tokenizer.hasMoreTokens()) {
+                    tokens[i] = tokenizer.nextToken();
+                } else {
+                    throw new RuntimeException("[Mapper] Expected " + TOKENS_PER_LINE + " tokens per line, but found " + (i - 1));
                 }
+            }
 
-                // remove tags from words if they exist
-                int index;
-                if ((index = tokens[W1_INDEX].indexOf("_")) != -1){
-                    tokens[W1_INDEX] = tokens[W1_INDEX].substring(0,index);
-                    continue;
-                }
-                if ((index = tokens[W2_INDEX].indexOf("_")) != -1){
-                    tokens[W2_INDEX] = tokens[W2_INDEX].substring(0,index);
-                    continue;
-                }
-                if(tokens[W1_INDEX].isEmpty() || tokens[W2_INDEX].isEmpty()){
-                    continue;
-                }
+            boolean skipLine = false;
+            // remove tags from words if they exist
+            int index;
+            if ((index = tokens[W1_INDEX].indexOf("_")) != -1){
+                toLog.append("\n\tRemoving tag from W1: ").append(tokens[W1_INDEX]);
+                tokens[W1_INDEX] = tokens[W1_INDEX].substring(0,index);
+                toLog.append("\n\tW1 after removing tag: ").append(tokens[W1_INDEX]);
+            }
+            if ((index = tokens[W2_INDEX].indexOf("_")) != -1){
+                toLog.append("\n\tRemoving tag from W2: ").append(tokens[W2_INDEX]);
+                tokens[W2_INDEX] = tokens[W2_INDEX].substring(0,index);
+                toLog.append("\n\tW2 after removing tag: ").append(tokens[W2_INDEX]);
+            }
+            if(tokens[W1_INDEX].isEmpty() || tokens[W2_INDEX].isEmpty()){
+                toLog.append("\n\tW1 or W2 is empty, skipping line");
+                skipLine = true;
+            }
 
-                // skip stop words
-                if (stopWords.contains(tokens[W1_INDEX]) || stopWords.contains(tokens[W2_INDEX])) {
-                    continue;
-                }
+            // skip stop words
+            if (stopWords.contains(tokens[W1_INDEX]) || stopWords.contains(tokens[W2_INDEX])) {
+                toLog.append("\n\tW1 or W2 is a stop word, skipping line");
+                skipLine = true;
+            }
 
+            if(! skipLine){
                 String decade = tokens[DECADE_INDEX];
                 Text outKey = new Text(decade.substring(0,decade.length()-1)+"0");
                 Text outValue = new Text ("%s,%s,%s".formatted(tokens[W1_INDEX], tokens[W2_INDEX], tokens[COUNT_OVERALL_INDEX]));
+                toLog.append("\n\tEmitting: ").append(outKey).append(" -> ").append(outValue);
                 context.write(outKey, outValue);
             }
+            log(toLog.append("\n").toString());
         }
 
         @Override
         protected void setup(Mapper<LongWritable, Text, Text, Text>.Context context) throws IOException, InterruptedException {
-            String stopWordsFile = context.getConfiguration().get("stopWordsFile");
             s3 = AmazonS3Client.builder().withRegion(Regions.US_WEST_2).build();
             String stopWordsStr = downloadSmallFileFromS3(stopWordsFile);
             stopWords = new HashSet<>();
@@ -119,19 +127,23 @@ public class Step1 {
 
         @Override
         protected void reduce(Text key, Iterable<Text> values, Reducer<Text, Text, Text, Text>.Context context) throws IOException, InterruptedException {
+            StringBuilder toLog = new StringBuilder("[Reducer] Processing key: ").append(key);
             long bigramCountInDecade = 0;
             for (Text value : values) {
                 String[] valueTokens = value.toString().split(",");
                 bigramCountInDecade += Long.parseLong(valueTokens[COUNT_OVERALL_VALUE_INDEX]);
             }
+            toLog.append("\n\tBigram count in decade: ").append(bigramCountInDecade);
             for(Text value : values){
                 String[] valueTokens = value.toString().split(",");
                 String w1 = valueTokens[W1_VALUE_INDEX];
                 String w2 = valueTokens[W2_VALUE_INDEX];
                 String countOverall = valueTokens[COUNT_OVERALL_VALUE_INDEX];
                 String valueOut = String.format("%s,%s,%s,%d", w1, w2, countOverall, bigramCountInDecade);
+                toLog.append("\n\tEmitting: ").append(key).append(" -> ").append(valueOut);
                 context.write(key, new Text(valueOut));
             }
+            log(toLog.append("\n").toString());
         }
     }
 
@@ -139,7 +151,6 @@ public class Step1 {
         System.out.println("[DEBUG] STEP 1 started!");
         readArgs(args);
         Configuration conf = new Configuration();
-        conf.set("stopWordsFile", stopWordsFile);
         try {
             Job job = Job.getInstance(conf, "Step1");
             job.setJarByClass(Step1.class);
@@ -158,14 +169,25 @@ public class Step1 {
         }
     }
 
+    private static void log(String s) {
+        if (debug) {
+            System.out.println(s);
+        }
+    }
+
     private static void readArgs(String[] args) {
         List<String> argsList = new LinkedList<>();
         argsList.add("-stopwordsfile");
         argsList.add("-inputurl");
         argsList.add("-outputurl");
+        argsList.add("-debug");
         for (int i = 0; i < args.length; i++) {
             String arg = args[i].toLowerCase();
             String errorMessage;
+            if(arg.equals("-debug")){
+                debug = true;
+                continue;
+            }
             if (arg.equals("-stopwordsfile")) {
                 errorMessage = "Missing stop words file\n";
                 try{

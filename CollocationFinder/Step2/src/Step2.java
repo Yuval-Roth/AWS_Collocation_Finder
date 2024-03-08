@@ -21,6 +21,7 @@ public class Step2 {
     private static final int W2_INDEX = 1;
     private static final int COUNT_OVERALL_INDEX = 3;
     private static final int BIGRAM_COUNT_IN_DECADE = 4;
+    private static boolean debug;
 
     /**
      * emits the following format:
@@ -33,16 +34,19 @@ public class Step2 {
 
         @Override
         protected void map(Text key, Text value, Mapper<Text, Text, Text, Text>.Context context) throws IOException, InterruptedException {
-              String[] valueTokens = value.toString().split(",");
-              String w1 = valueTokens[W1_INDEX];
-              String w2 = valueTokens[W2_INDEX];
-              String countOverall = valueTokens[COUNT_OVERALL_INDEX];
-              String bigramCountInDecade = valueTokens[BIGRAM_COUNT_IN_DECADE];
-              String valueOut = String.format("%s,%s,%s,%s", w1, w2, countOverall, bigramCountInDecade);
-              context.write(new Text(String.format("%s,%s,_", key, w1)), new Text(valueOut));
-              context.write(new Text(String.format("%s,_,%s", key, w2)), new Text(valueOut));
-            }
+
+            log("Processing line: " + value);
+            String[] valueTokens = value.toString().split(",");
+            String w1 = valueTokens[W1_INDEX];
+            String w2 = valueTokens[W2_INDEX];
+            String countOverall = valueTokens[COUNT_OVERALL_INDEX];
+            String bigramCountInDecade = valueTokens[BIGRAM_COUNT_IN_DECADE];
+            String valueOut = String.format("%s,%s,%s,%s", w1, w2, countOverall, bigramCountInDecade);
+            context.write(new Text(String.format("%s,%s,_", key, w1)), new Text(valueOut));
+            context.write(new Text(String.format("%s,_,%s", key, w2)), new Text(valueOut));
+
         }
+    }
 
     /**
      * emits the following format:
@@ -103,13 +107,24 @@ public class Step2 {
         }
     }
 
+    private static void log(String s) {
+        if (debug) {
+            System.out.println(s);
+        }
+    }
+
     private static void readArgs(String[] args) {
         List<String> argsList = new LinkedList<>();
         argsList.add("-inputurl");
         argsList.add("-outputurl");
+        argsList.add("-debug");
         for (int i = 0; i < args.length; i++) {
             String arg = args[i].toLowerCase();
             String errorMessage;
+            if(arg.equals("-debug")){
+                debug = true;
+                continue;
+            }
             if (arg.equals("-inputurl")) {
                 errorMessage = "Missing input url\n";
                 try{
