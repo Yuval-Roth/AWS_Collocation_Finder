@@ -20,8 +20,8 @@ import java.util.*;
 
 
 public class Step1 {
-
-
+//
+//
     private static final int TOKENS_PER_LINE = 5;
     private static final int W1_INDEX = 0;
     private static final int W2_INDEX = 1;
@@ -29,11 +29,11 @@ public class Step1 {
     private static final int COUNT_OVERALL_INDEX = 3;
     private static final int DISTINCT_BOOKS_COUNT_INDEX = 4;
     private static final String BUCKET_NAME = "distributed-systems-2024-bucket-yuval-adi";
-    private static boolean debug;
-    private static Path inputPath;
-    private static Path outputPath;
-    private static String stopWordsFile;
-    private static StringBuilder logBuffer;
+
+    private static boolean _debug;
+    private static Path _inputPath;
+    private static Path _outputPath;
+    private static String _stopWordsFile;
 
 
     /**
@@ -43,6 +43,7 @@ public class Step1 {
 
         private Set<String> stopWords;
         private AmazonS3 s3;
+        private StringBuilder logBuffer;
         private boolean debug;
 
         @Override
@@ -149,7 +150,7 @@ public class Step1 {
         private static final int W1_VALUE_INDEX = 0;
         private static final int W2_VALUE_INDEX = 1;
         private static final int COUNT_OVERALL_VALUE_INDEX = 2;
-
+        private StringBuilder logBuffer;
         private boolean debug;
 
         @Override
@@ -198,8 +199,8 @@ public class Step1 {
         System.out.println("[DEBUG] STEP 1 started!");
         readArgs(args);
         Configuration conf = new Configuration();
-        conf.set("stopWordsFile", stopWordsFile);
-        conf.set("debug", String.valueOf(debug));
+        conf.set("stopWordsFile", _stopWordsFile);
+        conf.set("debug", String.valueOf(_debug));
         try {
             Job job = Job.getInstance(conf, "Step1");
             job.setJarByClass(Step1.class);
@@ -210,8 +211,8 @@ public class Step1 {
             job.setMapOutputValueClass(Text.class);
             job.setOutputKeyClass(Text.class);
             job.setOutputValueClass(Text.class);
-            FileInputFormat.addInputPath(job, inputPath);
-            FileOutputFormat.setOutputPath(job, outputPath);
+            FileInputFormat.addInputPath(job, _inputPath);
+            FileOutputFormat.setOutputPath(job, _outputPath);
             System.exit(job.waitForCompletion(true) ? 0 : 1);
         } catch (Exception e) {
             e.printStackTrace();
@@ -228,7 +229,7 @@ public class Step1 {
             String arg = args[i].toLowerCase();
             String errorMessage;
             if(arg.equals("-debug")){
-                debug = true;
+                _debug = true;
                 continue;
             }
             if (arg.equals("-stopwordsfile")) {
@@ -237,7 +238,7 @@ public class Step1 {
                     if(argsList.contains(args[i+1])){
                         printErrorAndExit(errorMessage);
                     }
-                    stopWordsFile = args[i+1];
+                    _stopWordsFile = args[i+1];
                     i++;
                     continue;
                 } catch (IndexOutOfBoundsException e){
@@ -251,7 +252,7 @@ public class Step1 {
                     if(argsList.contains(args[i+1])){
                         printErrorAndExit(errorMessage);
                     }
-                    inputPath = new Path(args[i+1]);
+                    _inputPath = new Path(args[i+1]);
                     i++;
                     continue;
                 } catch (IndexOutOfBoundsException e){
@@ -265,7 +266,7 @@ public class Step1 {
                     if(argsList.contains(args[i+1])){
                         printErrorAndExit(errorMessage);
                     }
-                    outputPath = new Path(args[i+1]);
+                    _outputPath = new Path(args[i+1]);
                     i++;
                     continue;
                 } catch (IndexOutOfBoundsException e){
@@ -275,13 +276,13 @@ public class Step1 {
             }
         }
 
-        if(stopWordsFile == null){
+        if(_stopWordsFile == null){
             printErrorAndExit("Argument for stop words file not found\n");
         }
-        if(inputPath == null){
+        if(_inputPath == null){
             printErrorAndExit("Argument for input url not found\n");
         }
-        if(outputPath == null){
+        if(_outputPath == null){
             printErrorAndExit("Argument for output url not found\n");
         }
     }
