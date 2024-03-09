@@ -2,6 +2,7 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.S3Object;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
@@ -28,12 +29,11 @@ public class Step1 {
     private static final int COUNT_OVERALL_INDEX = 3;
     private static final int DISTINCT_BOOKS_COUNT_INDEX = 4;
     private static final String BUCKET_NAME = "distributed-systems-2024-bucket-yuval-adi";
-
-
     private static boolean debug;
     private static Path inputPath;
     private static Path outputPath;
     private static String stopWordsFile;
+    private static StringBuilder logBuffer;
 
 
     /**
@@ -43,10 +43,11 @@ public class Step1 {
 
         private Set<String> stopWords;
         private AmazonS3 s3;
+        private boolean debug;
 
         @Override
         protected void map(LongWritable key, Text value, Mapper<LongWritable, Text, Text, Text>.Context context) throws IOException, InterruptedException {
-            StringBuilder toLog = new StringBuilder("[Mapper] Processing line: ").append(value);
+            log("[Mapper] Processing line: " + value);
             StringTokenizer tokenizer = new StringTokenizer(value.toString());
             String[] tokens = new String[TOKENS_PER_LINE];
             for (int i = 0; i < TOKENS_PER_LINE; i++) {
@@ -61,23 +62,23 @@ public class Step1 {
             // remove tags from words if they exist
             int index;
             if ((index = tokens[W1_INDEX].indexOf("_")) != -1){
-                toLog.append("\n\tRemoving tag from W1: ").append(tokens[W1_INDEX]);
+                log("\tRemoving tag from W1: " + tokens[W1_INDEX]);
                 tokens[W1_INDEX] = tokens[W1_INDEX].substring(0,index);
-                toLog.append("\n\tW1 after removing tag: ").append(tokens[W1_INDEX]);
+                log("\tW1 after removing tag: " + tokens[W1_INDEX]);
             }
             if ((index = tokens[W2_INDEX].indexOf("_")) != -1){
-                toLog.append("\n\tRemoving tag from W2: ").append(tokens[W2_INDEX]);
+                log("\tRemoving tag from W2: " + tokens[W2_INDEX]);
                 tokens[W2_INDEX] = tokens[W2_INDEX].substring(0,index);
-                toLog.append("\n\tW2 after removing tag: ").append(tokens[W2_INDEX]);
+                log("\tW2 after removing tag: " + tokens[W2_INDEX]);
             }
             if(tokens[W1_INDEX].isEmpty() || tokens[W2_INDEX].isEmpty()){
-                toLog.append("\n\tW1 or W2 is empty, skipping line");
+                log("\tW1 or W2 is empty, skipping line");
                 skipLine = true;
             }
 
             // skip stop words
             if (stopWords.contains(tokens[W1_INDEX]) || stopWords.contains(tokens[W2_INDEX])) {
-                toLog.append("\n\tW1 or W2 is a stop word, skipping line");
+                log("\tW1 or W2 is a stop word, skipping line");
                 skipLine = true;
             }
 
@@ -85,15 +86,18 @@ public class Step1 {
                 String decade = tokens[DECADE_INDEX];
                 Text outKey = new Text(decade.substring(0,decade.length()-1)+"0");
                 Text outValue = new Text ("%s,%s,%s".formatted(tokens[W1_INDEX], tokens[W2_INDEX], tokens[COUNT_OVERALL_INDEX]));
-                toLog.append("\n\tEmitting: ").append(outKey).append(" -> ").append(outValue);
+                log("\tEmitting: " + outKey + " -> " + outValue);
                 context.write(outKey, outValue);
             }
-            log(toLog.append("\n").toString());
+            flushLog();
         }
 
         @Override
         protected void setup(Mapper<LongWritable, Text, Text, Text>.Context context) throws IOException, InterruptedException {
+            debug = Boolean.parseBoolean(context.getConfiguration().get("debug"));
+            String stopWordsFile = context.getConfiguration().get("stopWordsFile");
             s3 = AmazonS3Client.builder().withRegion(Regions.US_WEST_2).build();
+            log("[Mapper] Downloading stop words file from S3 from path: " + "hadoop/"+stopWordsFile);
             String stopWordsStr = downloadSmallFileFromS3(stopWordsFile);
             stopWords = new HashSet<>();
             stopWordsStr.lines().forEach(stopWords::add);
@@ -101,7 +105,13 @@ public class Step1 {
 
         private String downloadSmallFileFromS3(String key) {
 
-            var r = s3.getObject(new GetObjectRequest(BUCKET_NAME, "hadoop/"+key));
+            S3Object r;
+            try{
+                r = s3.getObject(new GetObjectRequest(BUCKET_NAME, "hadoop/"+key));
+            } catch (Exception e){
+                flushLog();
+                throw new RuntimeException("Failed to download file from S3", e);
+            }
 
             // get file from response
             byte[] file = {};
@@ -112,6 +122,21 @@ public class Step1 {
             }
 
             return new String(file);
+        }
+
+        private void log(String s) {
+            if (debug) {
+                if(logBuffer == null){
+                    logBuffer = new StringBuilder();
+                }
+                logBuffer.append(s).append("\n");
+            }
+        }
+        private void flushLog() {
+            if (debug) {
+                System.out.println(logBuffer);
+                logBuffer = null;
+            }
         }
     }
 
@@ -125,25 +150,47 @@ public class Step1 {
         private static final int W2_VALUE_INDEX = 1;
         private static final int COUNT_OVERALL_VALUE_INDEX = 2;
 
+        private boolean debug;
+
+        @Override
+        protected void setup(Reducer<Text, Text, Text, Text>.Context context) throws IOException, InterruptedException {
+            debug = Boolean.parseBoolean(context.getConfiguration().get("debug"));
+        }
+
         @Override
         protected void reduce(Text key, Iterable<Text> values, Reducer<Text, Text, Text, Text>.Context context) throws IOException, InterruptedException {
-            StringBuilder toLog = new StringBuilder("[Reducer] Processing key: ").append(key);
+            logBuffer = new StringBuilder("[Reducer] Processing key: ").append(key);
             long bigramCountInDecade = 0;
             for (Text value : values) {
                 String[] valueTokens = value.toString().split(",");
                 bigramCountInDecade += Long.parseLong(valueTokens[COUNT_OVERALL_VALUE_INDEX]);
             }
-            toLog.append("\n\tBigram count in decade: ").append(bigramCountInDecade);
+            log("\tBigram count in decade: " + bigramCountInDecade);
             for(Text value : values){
                 String[] valueTokens = value.toString().split(",");
                 String w1 = valueTokens[W1_VALUE_INDEX];
                 String w2 = valueTokens[W2_VALUE_INDEX];
                 String countOverall = valueTokens[COUNT_OVERALL_VALUE_INDEX];
                 String valueOut = String.format("%s,%s,%s,%d", w1, w2, countOverall, bigramCountInDecade);
-                toLog.append("\n\tEmitting: ").append(key).append(" -> ").append(valueOut);
+                log("\tEmitting: " + key + " -> " + valueOut);
                 context.write(key, new Text(valueOut));
             }
-            log(toLog.append("\n").toString());
+            flushLog();
+        }
+
+        private void log(String s) {
+            if (debug) {
+                if(logBuffer == null){
+                    logBuffer = new StringBuilder();
+                }
+                logBuffer.append(s).append("\n");
+            }
+        }
+        private void flushLog() {
+            if (debug) {
+                System.out.println(logBuffer);
+                logBuffer = null;
+            }
         }
     }
 
@@ -151,6 +198,8 @@ public class Step1 {
         System.out.println("[DEBUG] STEP 1 started!");
         readArgs(args);
         Configuration conf = new Configuration();
+        conf.set("stopWordsFile", stopWordsFile);
+        conf.set("debug", String.valueOf(debug));
         try {
             Job job = Job.getInstance(conf, "Step1");
             job.setJarByClass(Step1.class);
@@ -166,12 +215,6 @@ public class Step1 {
             System.exit(job.waitForCompletion(true) ? 0 : 1);
         } catch (Exception e) {
             e.printStackTrace();
-        }
-    }
-
-    private static void log(String s) {
-        if (debug) {
-            System.out.println(s);
         }
     }
 

@@ -55,6 +55,13 @@ public class Step3 {
         private static final int W1_COUNT_IN_DECADE_INDEX = 4;
         private static final int W2_COUNT_IN_DECADE_INDEX = 5;
 
+        private double minPmi;
+
+        @Override
+        protected void setup(Reducer<Text, Text, Text, Text>.Context context) throws IOException, InterruptedException {
+            minPmi = Double.parseDouble(context.getConfiguration().get("minPmi"));
+        }
+
         @Override
         protected void reduce(Text key, Iterable<Text> values, Reducer<Text, Text, Text, Text>.Context context) throws IOException, InterruptedException {
             String[] keyTokens = key.toString().split(",");
@@ -93,6 +100,7 @@ public class Step3 {
         System.out.println("[DEBUG] STEP 3 started!");
         readArgs(args);
         Configuration conf = new Configuration();
+        conf.set("minPmi", String.valueOf(minPmi));
         try {
             Job job = Job.getInstance(conf, "Step3");
             job.setJarByClass(Step3.class);

@@ -46,6 +46,13 @@ public class Step4 {
         private static final int W2_VALUE_INDEX = 1;
         private static final int NPMI_VALUE_INDEX = 2;
 
+        private double relMinPmi;
+
+        @Override
+        protected void setup(Reducer<Text, Text, Text, Text>.Context context) throws IOException, InterruptedException {
+            relMinPmi = Double.parseDouble(context.getConfiguration().get("relMinPmi"));
+        }
+
         @Override
         protected void reduce(Text key, Iterable<Text> values, Reducer<Text, Text, Text, Text>.Context context) throws IOException, InterruptedException {
             String decade = key.toString();

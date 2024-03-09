@@ -155,7 +155,7 @@ public class CollocationFinder {
                         System.out.println();
                         printUsageAndExit("Invalid minimum pmi\n");
                     }
-                    if(minPmi <= 0) {
+                    if(minPmi < 0) {
                         System.out.println();
                         printUsageAndExit("Invalid minimum pmi\n");
                     }
@@ -179,7 +179,7 @@ public class CollocationFinder {
                         System.out.println();
                         printUsageAndExit("Invalid relative minimum pmi\n");
                     }
-                    if(relMinPmi <= 0) {
+                    if(relMinPmi < 0) {
                         System.out.println();
                         printUsageAndExit("Invalid relative minimum pmi\n");
                     }

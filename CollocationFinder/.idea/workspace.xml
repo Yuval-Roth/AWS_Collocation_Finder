@@ -2,6 +2,9 @@
 <project version="4">
   <component name="ArtifactsWorkspaceSettings">
     <artifacts-to-build>
+      <artifact name="main:jar" />
+      <artifact name="step1:jar" />
+      <artifact name="step2:jar" />
       <artifact name="step3:jar" />
       <artifact name="step4:jar" />
     </artifacts-to-build>
@@ -11,10 +14,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="38712fba-5bfc-473f-a93a-bf4185f68234" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Main/src/CollocationFinder.java" beforeDir="false" afterPath="$PROJECT_DIR$/Main/src/CollocationFinder.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Step1/src/Step1.java" beforeDir="false" afterPath="$PROJECT_DIR$/Step1/src/Step1.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Step2/src/Step2.java" beforeDir="false" afterPath="$PROJECT_DIR$/Step2/src/Step2.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Step3/src/Step3.java" beforeDir="false" afterPath="$PROJECT_DIR$/Step3/src/Step3.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Step4/src/Step4.java" beforeDir="false" afterPath="$PROJECT_DIR$/Step4/src/Step4.java" afterDir="false" />
     </list>
@@ -40,7 +42,7 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "Application.CollocationFinder.executor": "Run",
-    "Application.Step1.executor": "Debug",
+    "Application.Step1.executor": "Run",
     "Downloaded.Files.Path.Enabled": "false",
     "Repository.Attach.Annotations": "false",
     "Repository.Attach.JavaDocs": "false",
@@ -80,11 +82,11 @@
       <recent name="" />
     </key>
   </component>
-  <component name="RunManager" selected="Application.Step1">
+  <component name="RunManager" selected="Application.CollocationFinder">
     <configuration name="CollocationFinder" type="Application" factoryName="Application" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="CollocationFinder" />
       <module name="main" />
-      <option name="PROGRAM_PARAMETERS" value="-minpmi 0.0000000000001 -relminpmi 0.0000000000001 -inputurl s3://distributed-systems-2024-bucket-yuval-adi/hadoop/inputs/small" />
+      <option name="PROGRAM_PARAMETERS" value="-debug -minpmi 0 -relminpmi 0 -inputurl s3://distributed-systems-2024-bucket-yuval-adi/hadoop/inputs/small" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -92,7 +94,7 @@
     <configuration name="Step1" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="Step1" />
       <module name="step1" />
-      <option name="PROGRAM_PARAMETERS" value="Step1 -stopWordsFile stop_words.txt -inputUrl s3://distributed-systems-2024-bucket-yuval-adi/hadoop/inputs/small_2gram_hebrew -outputUrl s3://distributed-systems-2024-bucket-yuval-adi/hadoop/outputs/34e9e1ad-f0b3-43a2-b350-088370fef87b" />
+      <option name="PROGRAM_PARAMETERS" value="Step1 -stopWordsFile stop_words.txt -debug -inputUrl s3://distributed-systems-2024-bucket-yuval-adi/hadoop/inputs/small -outputUrl s3://distributed-systems-2024-bucket-yuval-adi/hadoop/outputs/ac3b2dcc-717c-4fc5-9a20-840d7b957738" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -139,6 +141,15 @@
     </ignored-roots>
   </component>
   <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/Step1/src/Step1.java</url>
+          <line>221</line>
+          <option name="timeStamp" value="2" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
     <watches-manager>
       <configuration name="Application">
         <watch expression="conf.properties.entrySet().toArray()[90]" />
