@@ -21,15 +21,13 @@ public class CollocationFinder {
     private static final int INSTANCE_COUNT = 1;
     public static final String HADOOP_JARS_URL = BUCKET_URL + "hadoop/jars/";
     public static final String HADOOP_OUTPUTS_URL = BUCKET_URL + "hadoop/outputs/";
-    public static final String JAR_STEP_ARGS = "%s %s -inputUrl %s -outputUrl %s";
+    public static final String JAR_STEP_ARGS = "%s -inputUrl %s -outputUrl %s";
     private static final String CREDENTIALS_PATH = getFolderPath() + "credentials.txt";
     private static final String STOP_WORDS_FILE = "stop_words.txt";
     private static final String USAGE = ""; // TODO: WRITE USAGE
     public static String inputUrl;
-    public static String outputUrl;
     private static Double minPmi;
     private static Double relMinPmi;
-    private static boolean debug;
     // </APPLICATION DATA>
 
     public static void main(String[] args) {
@@ -59,15 +57,16 @@ public class CollocationFinder {
         };
         String output = HADOOP_OUTPUTS_URL + UUID.randomUUID();
         String input = inputUrl;
-        for(int i = 1 ; i <= 4 ; i++){
-            String _args = JAR_STEP_ARGS.formatted(firstArg[i - 1], debug ? "-debug" : "", input, output);
+        int jobsCount = 2; //TODO: CHANGE TO 4
+        for(int i = 1; i <= jobsCount; i++){
+            String _args = JAR_STEP_ARGS.formatted(firstArg[i - 1], input, output);
             HadoopJarStepConfig step = new HadoopJarStepConfig()
                     .withJar(HADOOP_JARS_URL+"step"+ i + ".jar")
                     .withMainClass("Step" + i)
                     .withArgs(_args.split(" "));
-            input = output;
-            output = HADOOP_OUTPUTS_URL + UUID.randomUUID();
             System.out.println("output file for step "+i+" will be located at "+ output);
+            input = output;
+            if(i != jobsCount) output = HADOOP_OUTPUTS_URL + UUID.randomUUID();
             stepConfigs.add(new StepConfig()
                     .withName("step"+i)
                     .withHadoopJarStep(step)
@@ -124,10 +123,6 @@ public class CollocationFinder {
         for (int i = 0; i < args.length; i++) {
             String arg = args[i].toLowerCase();
             String errorMessage;
-            if(arg.equals("-debug")){
-                debug = true;
-                continue;
-            }
             if (arg.equals("-inputurl")) {
                 errorMessage = "Missing input url\n";
                 try{

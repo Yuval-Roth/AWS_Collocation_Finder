@@ -2,10 +2,9 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.ObjectMetadata;
-import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -16,44 +15,37 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import utils.DecadesPartitioner;
 
-
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.*;
 
 
 public class Step1 {
-//
-//
-    private static final int TOKENS_PER_LINE = 5;
-    private static final int W1_INDEX = 0;
-    private static final int W2_INDEX = 1;
-    private static final int DECADE_INDEX = 2;
-    private static final int COUNT_OVERALL_INDEX = 3;
-    private static final int DISTINCT_BOOKS_COUNT_INDEX = 4;
-    private static final String BUCKET_NAME = "distributed-systems-2024-bucket-yuval-adi";
-
-    private static boolean _debug;
     private static Path _inputPath;
     private static Path _outputPath;
     private static String _stopWordsFile;
 
-
     /**
      * emits the following format:
      *
-     *  decade,w1,w2 -> w1,w2,count_overall
-     *  decade,w1,_ -> w1,w2,count_overall
-     *  decade,_,w2 -> w1,w2,count_overall
-     *  decade,_,_ -> w1,w2,count_overall
+     *  decade,w1,w2 -> count_overall
+     *  decade,w1,_ -> count_overall
+     *  decade,_,w2 -> count_overall
+     *  decade,_,_ -> count_overall
      */
-    public static class TokenizerMapper extends Mapper<LongWritable, Text, Text, Text> {
+    public static class TokenizerMapper extends Mapper<LongWritable, Text, Text, LongWritable> {
 
+        private static final String BUCKET_NAME = "distributed-systems-2024-bucket-yuval-adi";
+        private static final int W1_INDEX = 0;
+        private static final int W2_INDEX = 1;
+        private static final int DECADE_INDEX = 2;
+        private static final int COUNT_OVERALL_INDEX = 3;
         private Set<String> stopWords;
         private AmazonS3 s3;
-        private StringBuilder logBuffer;
-        private boolean debug;
+        private LongWritable outValue;
+        private Text outKeyBoth;
+        private Text outKeyW1;
+        private Text outKeyW2;
+        private Text outKeyNone;
 
         @Override
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
@@ -83,11 +75,12 @@ public class Step1 {
                 String w1 = tokens[W1_INDEX];
                 String w2 = tokens[W2_INDEX];
 
-                Text outKeyW1 = new Text("%s,%s,_".formatted(decade,w1));
-                Text outKeyW2 = new Text("%s,_,%s".formatted(decade,w2));
-                Text outKeyNone = new Text("%s,_,_".formatted(decade));
-                Text outValue = new Text ("%s,%s,%s".formatted(tokens[W1_INDEX],
-                        tokens[W2_INDEX], tokens[COUNT_OVERALL_INDEX]));
+                outKeyBoth.set("%s,%s,%s".formatted(decade,w1,w2));
+                outKeyW1.set("%s,%s,_".formatted(decade,w1));
+                outKeyW2.set("%s,_,%s".formatted(decade,w2));
+                outKeyNone.set("%s,_,_".formatted(decade));
+                outValue.set(Long.parseLong(tokens[COUNT_OVERALL_INDEX]));
+                context.write(outKeyBoth, outValue);
                 context.write(outKeyW1, outValue);
                 context.write(outKeyW2, outValue);
                 context.write(outKeyNone, outValue);
@@ -96,6 +89,11 @@ public class Step1 {
 
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
+            outKeyBoth = new Text();
+            outKeyW1 = new Text();
+            outKeyW2 = new Text();
+            outKeyNone = new Text();
+            outValue = new LongWritable();
             String stopWordsFile = context.getConfiguration().get("stopWordsFile");
             s3 = AmazonS3Client.builder().withRegion(Regions.US_WEST_2).build();
             String stopWordsStr = downloadSmallFileFromS3(stopWordsFile);
@@ -123,49 +121,66 @@ public class Step1 {
      * emits the following format:
      *    decade,w1,w2 -> w1,w2,count_overall,bigram_count_in_decade
      */
-    public static class BigramsPerDecadeReducer extends Reducer<Text, Text, Text, Text> {
+    public static class BigramsPerDecadeReducer extends Reducer<Text, LongWritable, Text, LongWritable> {
 
-        private static final int W1_VALUE_INDEX = 0;
-        private static final int W2_VALUE_INDEX = 1;
-        private static final int COUNT_OVERALL_VALUE_INDEX = 2;
-        private StringBuilder logBuffer;
-        private boolean debug;
+        private static final int DECADE_INDEX = 0;
+        private static final int W1_INDEX = 1;
+        private static final int W2_INDEX = 2;
+        FileSystem fs;
 
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
-            debug = Boolean.parseBoolean(context.getConfiguration().get("debug"));
+            fs = FileSystem.get(context.getConfiguration());
         }
 
         @Override
-        protected void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
-            String[] keyTokens = key.toString().split(",");
+        protected void reduce(Text key, Iterable<LongWritable> values, Context context) throws IOException, InterruptedException {
 
-            if(keyTokens[1].equals("_") && keyTokens[2].equals("_")){
+            Path folderPath = new Path("hdfs:///job1/");
+            fs.mkdirs(folderPath);
+            String[] keyTokens = key.toString().split(",");
+            String decade = keyTokens[DECADE_INDEX];
+
+            // <decade,_,_> -- count bigrams in decade (N)
+            if(keyTokens[W1_INDEX].equals("_") && keyTokens[W2_INDEX].equals("_")){
                 long bigramCountInDecade = 0;
-                for (Text value : values) {
-                    String[] valueTokens = value.toString().split(",");
-                    bigramCountInDecade += Long.parseLong(valueTokens[COUNT_OVERALL_VALUE_INDEX]);
-                    context.write(key, value);
+                for (LongWritable value : values) {
+                    bigramCountInDecade += value.get();
+//                    context.write(key, value);
                 }
-                context.write(key, new Text("_"+bigramCountInDecade));
-                context.getConfiguration().setInt(keyTokens[0], (int) bigramCountInDecade);
+                //"hdfs:///jobs1/1990-_-_"
+                Path filePath = new Path(folderPath, "%s-_-_".formatted(decade));
+                fs.create(filePath).writeUTF(String.valueOf(bigramCountInDecade));
             }
-            // count c_w1
-            else if(keyTokens[2].equals("_")) {
+            // <decade,w1,_> -- count c(w1) in decade
+            else if(keyTokens[W2_INDEX].equals("_")) {
                 long w1count = 0;
-                for (Text value : values) {
-                    String[] valueTokens = value.toString().split(",");
-                    w1count += Long.parseLong(valueTokens[COUNT_OVERALL_VALUE_INDEX]);
-                    context.write(key, value);
+                for (LongWritable value : values) {
+                    w1count += value.get();
+//                    context.write(key, value);
                 }
-            } else {
+                String w1 = keyTokens[W1_INDEX];
+                //"hdfs:///jobs1/1990-w1-_"
+                Path filePath = new Path(folderPath, "%s-%s-_".formatted(decade,w1));
+                fs.create(filePath).writeUTF(String.valueOf(w1count));
+            }
+            // <decade,_,w2> -- count c(w2) in decade
+            else if(keyTokens[W1_INDEX].equals("_")){
                 long w2count = 0;
-                for (Text value : values) {
-                    String[] valueTokens = value.toString().split(",");
-                    w2count += Long.parseLong(valueTokens[COUNT_OVERALL_VALUE_INDEX]);
+                for (LongWritable value : values) {
+                    w2count += value.get();
+//                    context.write(key, value);
+                }
+                String w2 = keyTokens[W2_INDEX];
+                //"hdfs:///jobs1/1990-_-w2"
+                Path filePath = new Path(folderPath, "%s-_-%s".formatted(decade,w2));
+                fs.create(filePath).writeUTF(String.valueOf(w2count));
+            }
+            // <decade,w1,w2>
+            else {
+                for (LongWritable value : values) {
                     context.write(key, value);
                 }
-                context.write(key, new Text("_"+w2count));
             }
         }
     }
@@ -175,7 +190,6 @@ public class Step1 {
         readArgs(args);
         Configuration conf = new Configuration();
         conf.set("stopWordsFile", _stopWordsFile);
-        conf.set("enableDebugging", String.valueOf(_debug));
         try {
             Job job = Job.getInstance(conf, "Step1");
             job.setJarByClass(Step1.class);
@@ -183,9 +197,9 @@ public class Step1 {
             job.setPartitionerClass(DecadesPartitioner.class);
             job.setReducerClass(BigramsPerDecadeReducer.class);
             job.setMapOutputKeyClass(Text.class);
-            job.setMapOutputValueClass(Text.class);
+            job.setMapOutputValueClass(LongWritable.class);
             job.setOutputKeyClass(Text.class);
-            job.setOutputValueClass(Text.class);
+            job.setOutputValueClass(LongWritable.class);
             FileInputFormat.addInputPath(job, _inputPath);
             FileOutputFormat.setOutputPath(job, _outputPath);
             System.exit(job.waitForCompletion(true) ? 0 : 1);
@@ -199,14 +213,9 @@ public class Step1 {
         argsList.add("-stopwordsfile");
         argsList.add("-inputurl");
         argsList.add("-outputurl");
-        argsList.add("-debug");
         for (int i = 0; i < args.length; i++) {
             String arg = args[i].toLowerCase();
             String errorMessage;
-            if(arg.equals("-debug")){
-                _debug = true;
-                continue;
-            }
             if (arg.equals("-stopwordsfile")) {
                 errorMessage = "Missing stop words file\n";
                 try{
