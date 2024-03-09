@@ -79,6 +79,7 @@ public class Step4 {
         System.out.println("[DEBUG] STEP 4 started!");
         readArgs(args);
         Configuration conf = new Configuration();
+        conf.set("relMinPmi", String.valueOf(relMinPmi));
         try {
             Job job = Job.getInstance(conf, "Step4");
             job.setJarByClass(Step4.class);

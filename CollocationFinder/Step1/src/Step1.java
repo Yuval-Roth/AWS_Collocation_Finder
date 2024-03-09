@@ -2,6 +2,8 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.GetObjectRequest;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
@@ -15,7 +17,9 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import utils.DecadesPartitioner;
 
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 
 
@@ -37,7 +41,12 @@ public class Step1 {
 
 
     /**
-     * emits the following format: decade -> w1,w2,count_overall
+     * emits the following format:
+     *
+     *  decade,w1,w2 -> w1,w2,count_overall
+     *  decade,w1,_ -> w1,w2,count_overall
+     *  decade,_,w2 -> w1,w2,count_overall
+     *  decade,_,_ -> w1,w2,count_overall
      */
     public static class TokenizerMapper extends Mapper<LongWritable, Text, Text, Text> {
 
@@ -47,58 +56,48 @@ public class Step1 {
         private boolean debug;
 
         @Override
-        protected void map(LongWritable key, Text value, Mapper<LongWritable, Text, Text, Text>.Context context) throws IOException, InterruptedException {
-            log("[Mapper] Processing line: " + value);
-            StringTokenizer tokenizer = new StringTokenizer(value.toString());
-            String[] tokens = new String[TOKENS_PER_LINE];
-            for (int i = 0; i < TOKENS_PER_LINE; i++) {
-                if (tokenizer.hasMoreTokens()) {
-                    tokens[i] = tokenizer.nextToken();
-                } else {
-                    throw new RuntimeException("[Mapper] Expected " + TOKENS_PER_LINE + " tokens per line, but found " + (i - 1));
-                }
-            }
+        protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+            String[] tokens = value.toString().split("\\s+");
 
             boolean skipLine = false;
             // remove tags from words if they exist
             int index;
             if ((index = tokens[W1_INDEX].indexOf("_")) != -1){
-                log("\tRemoving tag from W1: " + tokens[W1_INDEX]);
                 tokens[W1_INDEX] = tokens[W1_INDEX].substring(0,index);
-                log("\tW1 after removing tag: " + tokens[W1_INDEX]);
             }
             if ((index = tokens[W2_INDEX].indexOf("_")) != -1){
-                log("\tRemoving tag from W2: " + tokens[W2_INDEX]);
                 tokens[W2_INDEX] = tokens[W2_INDEX].substring(0,index);
-                log("\tW2 after removing tag: " + tokens[W2_INDEX]);
             }
             if(tokens[W1_INDEX].isEmpty() || tokens[W2_INDEX].isEmpty()){
-                log("\tW1 or W2 is empty, skipping line");
                 skipLine = true;
             }
 
             // skip stop words
             if (stopWords.contains(tokens[W1_INDEX]) || stopWords.contains(tokens[W2_INDEX])) {
-                log("\tW1 or W2 is a stop word, skipping line");
                 skipLine = true;
             }
 
             if(! skipLine){
                 String decade = tokens[DECADE_INDEX];
-                Text outKey = new Text(decade.substring(0,decade.length()-1)+"0");
-                Text outValue = new Text ("%s,%s,%s".formatted(tokens[W1_INDEX], tokens[W2_INDEX], tokens[COUNT_OVERALL_INDEX]));
-                log("\tEmitting: " + outKey + " -> " + outValue);
-                context.write(outKey, outValue);
+                decade = decade.substring(0, decade.length() - 1) + "0";
+                String w1 = tokens[W1_INDEX];
+                String w2 = tokens[W2_INDEX];
+
+                Text outKeyW1 = new Text("%s,%s,_".formatted(decade,w1));
+                Text outKeyW2 = new Text("%s,_,%s".formatted(decade,w2));
+                Text outKeyNone = new Text("%s,_,_".formatted(decade));
+                Text outValue = new Text ("%s,%s,%s".formatted(tokens[W1_INDEX],
+                        tokens[W2_INDEX], tokens[COUNT_OVERALL_INDEX]));
+                context.write(outKeyW1, outValue);
+                context.write(outKeyW2, outValue);
+                context.write(outKeyNone, outValue);
             }
-            flushLog();
         }
 
         @Override
-        protected void setup(Mapper<LongWritable, Text, Text, Text>.Context context) throws IOException, InterruptedException {
-            debug = Boolean.parseBoolean(context.getConfiguration().get("debug"));
+        protected void setup(Context context) throws IOException, InterruptedException {
             String stopWordsFile = context.getConfiguration().get("stopWordsFile");
             s3 = AmazonS3Client.builder().withRegion(Regions.US_WEST_2).build();
-            log("[Mapper] Downloading stop words file from S3 from path: " + "hadoop/"+stopWordsFile);
             String stopWordsStr = downloadSmallFileFromS3(stopWordsFile);
             stopWords = new HashSet<>();
             stopWordsStr.lines().forEach(stopWords::add);
@@ -106,13 +105,7 @@ public class Step1 {
 
         private String downloadSmallFileFromS3(String key) {
 
-            S3Object r;
-            try{
-                r = s3.getObject(new GetObjectRequest(BUCKET_NAME, "hadoop/"+key));
-            } catch (Exception e){
-                flushLog();
-                throw new RuntimeException("Failed to download file from S3", e);
-            }
+            S3Object r = s3.getObject(new GetObjectRequest(BUCKET_NAME, "hadoop/" + key));
 
             // get file from response
             byte[] file = {};
@@ -123,21 +116,6 @@ public class Step1 {
             }
 
             return new String(file);
-        }
-
-        private void log(String s) {
-            if (debug) {
-                if(logBuffer == null){
-                    logBuffer = new StringBuilder();
-                }
-                logBuffer.append(s).append("\n");
-            }
-        }
-        private void flushLog() {
-            if (debug) {
-                System.out.println(logBuffer);
-                logBuffer = null;
-            }
         }
     }
 
@@ -154,43 +132,40 @@ public class Step1 {
         private boolean debug;
 
         @Override
-        protected void setup(Reducer<Text, Text, Text, Text>.Context context) throws IOException, InterruptedException {
+        protected void setup(Context context) throws IOException, InterruptedException {
             debug = Boolean.parseBoolean(context.getConfiguration().get("debug"));
         }
 
         @Override
-        protected void reduce(Text key, Iterable<Text> values, Reducer<Text, Text, Text, Text>.Context context) throws IOException, InterruptedException {
-            logBuffer = new StringBuilder("[Reducer] Processing key: ").append(key);
-            long bigramCountInDecade = 0;
-            for (Text value : values) {
-                String[] valueTokens = value.toString().split(",");
-                bigramCountInDecade += Long.parseLong(valueTokens[COUNT_OVERALL_VALUE_INDEX]);
-            }
-            log("\tBigram count in decade: " + bigramCountInDecade);
-            for(Text value : values){
-                String[] valueTokens = value.toString().split(",");
-                String w1 = valueTokens[W1_VALUE_INDEX];
-                String w2 = valueTokens[W2_VALUE_INDEX];
-                String countOverall = valueTokens[COUNT_OVERALL_VALUE_INDEX];
-                String valueOut = String.format("%s,%s,%s,%d", w1, w2, countOverall, bigramCountInDecade);
-                log("\tEmitting: " + key + " -> " + valueOut);
-                context.write(key, new Text(valueOut));
-            }
-            flushLog();
-        }
+        protected void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
+            String[] keyTokens = key.toString().split(",");
 
-        private void log(String s) {
-            if (debug) {
-                if(logBuffer == null){
-                    logBuffer = new StringBuilder();
+            if(keyTokens[1].equals("_") && keyTokens[2].equals("_")){
+                long bigramCountInDecade = 0;
+                for (Text value : values) {
+                    String[] valueTokens = value.toString().split(",");
+                    bigramCountInDecade += Long.parseLong(valueTokens[COUNT_OVERALL_VALUE_INDEX]);
+                    context.write(key, value);
                 }
-                logBuffer.append(s).append("\n");
+                context.write(key, new Text("_"+bigramCountInDecade));
+                context.getConfiguration().setInt(keyTokens[0], (int) bigramCountInDecade);
             }
-        }
-        private void flushLog() {
-            if (debug) {
-                System.out.println(logBuffer);
-                logBuffer = null;
+            // count c_w1
+            else if(keyTokens[2].equals("_")) {
+                long w1count = 0;
+                for (Text value : values) {
+                    String[] valueTokens = value.toString().split(",");
+                    w1count += Long.parseLong(valueTokens[COUNT_OVERALL_VALUE_INDEX]);
+                    context.write(key, value);
+                }
+            } else {
+                long w2count = 0;
+                for (Text value : values) {
+                    String[] valueTokens = value.toString().split(",");
+                    w2count += Long.parseLong(valueTokens[COUNT_OVERALL_VALUE_INDEX]);
+                    context.write(key, value);
+                }
+                context.write(key, new Text("_"+w2count));
             }
         }
     }
@@ -200,13 +175,13 @@ public class Step1 {
         readArgs(args);
         Configuration conf = new Configuration();
         conf.set("stopWordsFile", _stopWordsFile);
-        conf.set("debug", String.valueOf(_debug));
+        conf.set("enableDebugging", String.valueOf(_debug));
         try {
             Job job = Job.getInstance(conf, "Step1");
             job.setJarByClass(Step1.class);
-            job.setMapperClass(Step1.TokenizerMapper.class);
+            job.setMapperClass(TokenizerMapper.class);
             job.setPartitionerClass(DecadesPartitioner.class);
-            job.setReducerClass(Step1.BigramsPerDecadeReducer.class);
+            job.setReducerClass(BigramsPerDecadeReducer.class);
             job.setMapOutputKeyClass(Text.class);
             job.setMapOutputValueClass(Text.class);
             job.setOutputKeyClass(Text.class);
