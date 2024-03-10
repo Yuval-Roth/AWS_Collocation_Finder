@@ -4,7 +4,6 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -32,7 +31,7 @@ public class Step1 {
      *  decade,_,w2 -> count_overall
      *  decade,_,_ -> count_overall
      */
-    public static class TokenizerMapper extends Mapper<LongWritable, Text, Text, LongWritable> {
+    public static class TokenizerMapper extends Mapper<LongWritable, Text, Text, Text> {
 
         private static final String BUCKET_NAME = "distributed-systems-2024-bucket-yuval-adi";
         private static final int W1_INDEX = 0;
@@ -42,7 +41,7 @@ public class Step1 {
         private Set<String> stopWords;
         private AmazonS3 s3;
         private Text outKey;
-        private LongWritable outValue;
+        private Text outValue;
 
         @Override
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
@@ -70,7 +69,7 @@ public class Step1 {
             String w1 = tokens[W1_INDEX];
             String w2 = tokens[W2_INDEX];
 
-            outValue.set(Long.parseLong(tokens[COUNT_OVERALL_INDEX]));
+            outValue.set("%s,%s,%s".formatted(w1,w2,tokens[COUNT_OVERALL_INDEX]));
             outKey.set("%s,%s,%s".formatted(decade,w1,w2));
             context.write(outKey, outValue);
             outKey.set("%s,%s,_".formatted(decade,w1));
@@ -84,7 +83,7 @@ public class Step1 {
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
             outKey = new Text();
-            outValue = new LongWritable();
+            outValue = new Text();
             String stopWordsFile = context.getConfiguration().get("stopWordsFile");
             s3 = AmazonS3Client.builder().withRegion(Regions.US_WEST_2).build();
             String stopWordsStr = downloadSmallFileFromS3(stopWordsFile);
@@ -112,16 +111,12 @@ public class Step1 {
      * emits the following format:
      *    decade,w1,w2 -> w1,w2,count_overall,bigram_count_in_decade
      */
-    public static class BigramsPerDecadeReducer extends Reducer<Text, LongWritable, Text, Text> {
+    public static class BigramsPerDecadeReducer extends Reducer<Text, Text, Text, Text> {
 
         private static final int KEY_DECADE_INDEX = 0;
-        private static final int KEY_W1_INDEX = 1;
-        private static final int KEY_W2_INDEX = 2;
-
-        private static final int VALUE_C1_C2_COUNT_INDEX = 0;
-        private static final int VALUE_BIGRAM_COUNT_IN_DECADE_INDEX = 1;
-        private static final int VALUE_C1_COUNT_INDEX = 2;
-        private static final int VALUE_C2_COUNT_INDEX = 3;
+        private static final int VALUE_W1_INDEX = 0;
+        private static final int VALUE_W2_INDEX = 1;
+        private static final int VALUE_INDEX = 2;
         private Text outKey;
         private Text outValue;
 
@@ -133,53 +128,51 @@ public class Step1 {
         }
 
         @Override
-        protected void reduce(Text key, Iterable<LongWritable> values, Context context) throws IOException, InterruptedException {
+        protected void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
 
             String[] keyTokens = key.toString().split(",");
             String decade = keyTokens[KEY_DECADE_INDEX];
-            String w1 = keyTokens[KEY_W1_INDEX];
-            String w2 = keyTokens[KEY_W2_INDEX];
+
+            var iter = values.iterator();
+            if(! iter.hasNext()) return;
+
+            String[] valueTokens = iter.next().toString().split(",");
+            String w1 = valueTokens[0];
+            String w2 = valueTokens[1];
+
+            long counter = 0;
+            counter += Long.parseLong(valueTokens[VALUE_INDEX]);
+            while(iter.hasNext()){
+                valueTokens = iter.next().toString().split(",");
+                counter += Long.parseLong(valueTokens[VALUE_INDEX]);
+            }
 
             // <decade,_,_> -- count bigrams in decade (N)
-            if(keyTokens[KEY_W1_INDEX].equals("_") && keyTokens[KEY_W2_INDEX].equals("_")){
-                long bigramCountInDecade = 0;
-                for (LongWritable value : values) {
-                    bigramCountInDecade += value.get();
-                }
+            if(keyTokens[VALUE_W1_INDEX].equals("_") && keyTokens[VALUE_W2_INDEX].equals("_")){
+                // <decade,_,_> -> w1 , w2 , _ , N , _ , _
                 outKey.set("%s,%s,%s".formatted(decade,"_","_"));
-                outValue.set("%s,%s,%s,%s,%s,%s".formatted(w1,w2,"_",bigramCountInDecade,"_","_"));
-                context.write(outKey, outValue);
+                outValue.set("%s,%s,%s,%s,%s,%s".formatted(w1,w2,"_",counter,"_","_"));
             }
             // <decade,w1,_> -- count c(w1) in decade
-            else if(keyTokens[KEY_W2_INDEX].equals("_")) {
-                long w1count = 0;
-                for (LongWritable value : values) {
-                    w1count += value.get();
-                }
+            else if(keyTokens[VALUE_W2_INDEX].equals("_")) {
+                // <decade,w1,_> -> w1 , w2 , _ , _ , c(w1) , _
                 outKey.set("%s,%s,%s".formatted(decade,w1,"_"));
-                outValue.set("%s,%s,%s,%s,%d,%s".formatted(w1,w2,"_","_",w1count,"_"));
-                context.write(outKey, outValue);
+                outValue.set("%s,%s,%s,%s,%d,%s".formatted(w1,w2,"_","_",counter,"_"));
             }
             // <decade,_,w2> -- count c(w2) in decade
-            else if(keyTokens[KEY_W1_INDEX].equals("_")){
-                long w2count = 0;
-                for (LongWritable value : values) {
-                    w2count += value.get();
-                }
+            else if(keyTokens[VALUE_W1_INDEX].equals("_")){
+                // <decade,_,w2> -> w1 , w2 , _ , _ , _ , c(w2)
                 outKey.set("%s,%s,%s".formatted(decade,"_",w2));
-                outValue.set("%s,%s,%s,%s,%s,%d".formatted(w1,w2,"_","_","_",w2count));
-                context.write(outKey, outValue);
+                outValue.set("%s,%s,%s,%s,%s,%d".formatted(w1,w2,"_","_","_",counter));
             }
             // <decade,w1,w2> -- count c(w1,w2) in decade
             else {
-                long c_w1_w2 = 0;
-                for (LongWritable value : values) {
-                    c_w1_w2 += value.get();
-                }
+                // <decade,w1,w2> -> w1 , w2 , c(w1,w2) , _ , _ , _
                 outKey.set("%s,%s,%s".formatted(decade,w1,w2));
-                outValue.set("%s,%s,%s,%s,%s,%s".formatted(w1,w2,c_w1_w2,"_","_","_"));
-                context.write(outKey, outValue);
+                outValue.set("%s,%s,%s,%s,%s,%s".formatted(w1,w2,counter,"_","_","_"));
             }
+
+            context.write(outKey, outValue);
         }
     }
 
@@ -198,7 +191,7 @@ public class Step1 {
             job.setPartitionerClass(DecadesPartitioner.class);
             job.setReducerClass(BigramsPerDecadeReducer.class);
             job.setMapOutputKeyClass(Text.class);
-            job.setMapOutputValueClass(LongWritable.class);
+            job.setMapOutputValueClass(Text.class);
             job.setOutputKeyClass(Text.class);
             job.setOutputValueClass(Text.class);
             FileInputFormat.addInputPath(job, _inputPath);

@@ -79,9 +79,9 @@ public class Step4 {
                 }
 
                 outKey.set("%s %s %s %s".formatted(key.toString(),
+                        npmi,
                         valueTokens[W1_VALUE_INDEX],
-                        valueTokens[W2_VALUE_INDEX],
-                        npmi));
+                        valueTokens[W2_VALUE_INDEX]));
                 context.write(outKey, outValue);
             }
         }
@@ -122,6 +122,9 @@ public class Step4 {
         System.out.println("[DEBUG] STEP 4 started!");
         readArgs(args);
         Configuration conf = new Configuration();
+        System.out.println("[DEBUG] output path: " + _outputPath);
+        System.out.println("[DEBUG] input path: " + _inputPath);
+        System.out.println("[DEBUG] relMinPmi: " + _relMinPmi);
         conf.set("relMinPmi", String.valueOf(_relMinPmi));
         try {
             Job job = Job.getInstance(conf, "Step4");
@@ -133,7 +136,6 @@ public class Step4 {
             job.setMapOutputValueClass(Text.class);
             job.setOutputKeyClass(Text.class);
             job.setOutputValueClass(Text.class);
-            job.setSortComparatorClass(DescendingComparator.class);
             FileInputFormat.addInputPath(job, _inputPath);
             FileOutputFormat.setOutputPath(job, _outputPath);
             System.exit(job.waitForCompletion(true) ? 0 : 1);

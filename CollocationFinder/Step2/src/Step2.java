@@ -31,8 +31,8 @@ public class Step2 {
         private static final int VALUE_W2_INDEX = 1;
         private static final int VALUE_C_W1_W2_INDEX = 2;
         private static final int VALUE_BIGRAM_COUNT_IN_DECADE_INDEX = 3;
-        private static final int VALUE_C_W1_INDEX = 3;
-        private static final int VALUE_C_W2_INDEX = 4;
+        private static final int VALUE_C_W1_INDEX = 4;
+        private static final int VALUE_C_W2_INDEX = 5;
         // </KEY INDEXES>
 
         private Text outKey;
@@ -46,7 +46,7 @@ public class Step2 {
 
         @Override
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
-            String[] values = key.toString().split("\\s+");
+            String[] values = value.toString().split("\\s+");
 
             String[] keyTokens = values[0].split(",");
             String[] valueTokens = values[1].split(",");
@@ -64,7 +64,7 @@ public class Step2 {
         }
     }
 
-    public static class C_W_Reducer extends Reducer<Text, Text, Text, DoubleWritable> {
+    public static class C_W_Reducer extends Reducer<Text, Text, Text, Text> {
 
         // <VALUE INDEXES>
         private static final int VALUE_C_W1_W2_INDEX = 0;
@@ -73,12 +73,12 @@ public class Step2 {
         private static final int VALUE_C_W2_INDEX = 3;
         // </VALUE INDEXES>
 
-        DoubleWritable outValue;
+        Text outValue;
         private double minPmi;
 
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
-            outValue = new DoubleWritable();
+            outValue = new Text();
             minPmi = Double.parseDouble(context.getConfiguration().get("minPmi"));
         }
 
@@ -92,23 +92,23 @@ public class Step2 {
             for(Text value : values){
                 String[] valueTokens = value.toString().split(",");
                 if(!valueTokens[VALUE_C_W1_W2_INDEX].equals("_")){
-                    c_w1_w2 += Double.parseDouble(valueTokens[VALUE_C_W1_W2_INDEX]);
+                    c_w1_w2 += Long.parseLong(valueTokens[VALUE_C_W1_W2_INDEX]);
                 }
                 else if(!valueTokens[VALUE_BIGRAM_COUNT_IN_DECADE_INDEX].equals("_")){
-                    N += Double.parseDouble(valueTokens[VALUE_BIGRAM_COUNT_IN_DECADE_INDEX]);
+                    N += Long.parseLong(valueTokens[VALUE_BIGRAM_COUNT_IN_DECADE_INDEX]);
                 }
                 else if(!valueTokens[VALUE_C_W1_INDEX].equals("_")){
-                    c_w1 += Double.parseDouble(valueTokens[VALUE_C_W1_INDEX]);
+                    c_w1 += Long.parseLong(valueTokens[VALUE_C_W1_INDEX]);
                 }
                 else if(!valueTokens[VALUE_C_W2_INDEX].equals("_")){
-                    c_w2 += Double.parseDouble(valueTokens[VALUE_C_W2_INDEX]);
+                    c_w2 += Long.parseLong(valueTokens[VALUE_C_W2_INDEX]);
                 }
             }
             double npmi = calculateNPMI(c_w1_w2, N, c_w1, c_w2);
             if(npmi < minPmi){
                 return;
             }
-            outValue.set(npmi);
+            outValue.set(String.valueOf(npmi));
             context.write(key, outValue);
         }
 
@@ -121,6 +121,9 @@ public class Step2 {
     public static void main(String[] args){
         System.out.println("[DEBUG] STEP 2 started!");
         readArgs(args);
+        System.out.println("[DEBUG] output path: " + _outputPath);
+        System.out.println("[DEBUG] input path: " + _inputPath);
+        System.out.println("[DEBUG] minPmi: " + _minPmi);
         Configuration conf = new Configuration();
         conf.set("minPmi", String.valueOf(_minPmi));
         try {
@@ -132,7 +135,7 @@ public class Step2 {
             job.setMapOutputKeyClass(Text.class);
             job.setMapOutputValueClass(Text.class);
             job.setOutputKeyClass(Text.class);
-            job.setOutputValueClass(DoubleWritable.class);
+            job.setOutputValueClass(Text.class);
             FileInputFormat.addInputPath(job, _inputPath);
             FileOutputFormat.setOutputPath(job, _outputPath);
             System.exit(job.waitForCompletion(true) ? 0 : 1);

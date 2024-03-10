@@ -29,7 +29,7 @@ public class Step3 {
         private Text outValue;
 
         @Override
-        protected void setup(Mapper<LongWritable, Text, Text, Text>.Context context) throws IOException, InterruptedException {
+        protected void setup(Context context) throws IOException, InterruptedException {
             outKey = new Text();
             outValue = new Text();
         }
@@ -79,6 +79,8 @@ public class Step3 {
     public static void main(String[] args){
         System.out.println("[DEBUG] STEP 3 started!");
         readArgs(args);
+        System.out.println("[DEBUG] output path: " + _outputPath);
+        System.out.println("[DEBUG] input path: " + _inputPath);
         Configuration conf = new Configuration();
         try {
             Job job = Job.getInstance(conf, "Step3");
