@@ -41,17 +41,13 @@ public class Step1 {
         private static final int COUNT_OVERALL_INDEX = 3;
         private Set<String> stopWords;
         private AmazonS3 s3;
+        private Text outKey;
         private LongWritable outValue;
-        private Text outKeyBoth;
-        private Text outKeyW1;
-        private Text outKeyW2;
-        private Text outKeyNone;
 
         @Override
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
             String[] tokens = value.toString().split("\\s+");
 
-            boolean skipLine = false;
             // remove tags from words if they exist
             int index;
             if ((index = tokens[W1_INDEX].indexOf("_")) != -1){
@@ -61,38 +57,33 @@ public class Step1 {
                 tokens[W2_INDEX] = tokens[W2_INDEX].substring(0,index);
             }
             if(tokens[W1_INDEX].isEmpty() || tokens[W2_INDEX].isEmpty()){
-                skipLine = true;
+                return;
             }
 
             // skip stop words
             if (stopWords.contains(tokens[W1_INDEX]) || stopWords.contains(tokens[W2_INDEX])) {
-                skipLine = true;
+                return;
             }
 
-            if(! skipLine){
-                String decade = tokens[DECADE_INDEX];
-                decade = decade.substring(0, decade.length() - 1) + "0";
-                String w1 = tokens[W1_INDEX];
-                String w2 = tokens[W2_INDEX];
+            String decade = tokens[DECADE_INDEX];
+            decade = decade.substring(0, decade.length() - 1) + "0";
+            String w1 = tokens[W1_INDEX];
+            String w2 = tokens[W2_INDEX];
 
-                outKeyBoth.set("%s,%s,%s".formatted(decade,w1,w2));
-                outKeyW1.set("%s,%s,_".formatted(decade,w1));
-                outKeyW2.set("%s,_,%s".formatted(decade,w2));
-                outKeyNone.set("%s,_,_".formatted(decade));
-                outValue.set(Long.parseLong(tokens[COUNT_OVERALL_INDEX]));
-                context.write(outKeyBoth, outValue);
-                context.write(outKeyW1, outValue);
-                context.write(outKeyW2, outValue);
-                context.write(outKeyNone, outValue);
-            }
+            outValue.set(Long.parseLong(tokens[COUNT_OVERALL_INDEX]));
+            outKey.set("%s,%s,%s".formatted(decade,w1,w2));
+            context.write(outKey, outValue);
+            outKey.set("%s,%s,_".formatted(decade,w1));
+            context.write(outKey, outValue);
+            outKey.set("%s,_,%s".formatted(decade,w2));
+            context.write(outKey, outValue);
+            outKey.set("%s,_,_".formatted(decade));
+            context.write(outKey, outValue);
         }
 
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
-            outKeyBoth = new Text();
-            outKeyW1 = new Text();
-            outKeyW2 = new Text();
-            outKeyNone = new Text();
+            outKey = new Text();
             outValue = new LongWritable();
             String stopWordsFile = context.getConfiguration().get("stopWordsFile");
             s3 = AmazonS3Client.builder().withRegion(Regions.US_WEST_2).build();
@@ -121,63 +112,73 @@ public class Step1 {
      * emits the following format:
      *    decade,w1,w2 -> w1,w2,count_overall,bigram_count_in_decade
      */
-    public static class BigramsPerDecadeReducer extends Reducer<Text, LongWritable, Text, LongWritable> {
+    public static class BigramsPerDecadeReducer extends Reducer<Text, LongWritable, Text, Text> {
 
-        private static final int DECADE_INDEX = 0;
-        private static final int W1_INDEX = 1;
-        private static final int W2_INDEX = 2;
-        FileSystem fs;
+        private static final int KEY_DECADE_INDEX = 0;
+        private static final int KEY_W1_INDEX = 1;
+        private static final int KEY_W2_INDEX = 2;
+
+        private static final int VALUE_C1_C2_COUNT_INDEX = 0;
+        private static final int VALUE_BIGRAM_COUNT_IN_DECADE_INDEX = 1;
+        private static final int VALUE_C1_COUNT_INDEX = 2;
+        private static final int VALUE_C2_COUNT_INDEX = 3;
+        private Text outKey;
+        private Text outValue;
+
 
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
-            fs = FileSystem.get(context.getConfiguration());
+            outKey = new Text();
+            outValue = new Text();
         }
 
         @Override
         protected void reduce(Text key, Iterable<LongWritable> values, Context context) throws IOException, InterruptedException {
 
-            Path folderPath = new Path("hdfs:///step1/");
-            fs.mkdirs(folderPath);
             String[] keyTokens = key.toString().split(",");
-            String decade = keyTokens[DECADE_INDEX];
+            String decade = keyTokens[KEY_DECADE_INDEX];
+            String w1 = keyTokens[KEY_W1_INDEX];
+            String w2 = keyTokens[KEY_W2_INDEX];
 
             // <decade,_,_> -- count bigrams in decade (N)
-            if(keyTokens[W1_INDEX].equals("_") && keyTokens[W2_INDEX].equals("_")){
+            if(keyTokens[KEY_W1_INDEX].equals("_") && keyTokens[KEY_W2_INDEX].equals("_")){
                 long bigramCountInDecade = 0;
                 for (LongWritable value : values) {
                     bigramCountInDecade += value.get();
                 }
-                //"hdfs:///jobs1/1990-_-_"
-                Path filePath = new Path(folderPath, "%s-_-_".formatted(decade));
-                fs.create(filePath).writeUTF(String.valueOf(bigramCountInDecade));
+                outKey.set("%s,%s,%s".formatted(decade,"_","_"));
+                outValue.set("%s,%s,%s,%s,%s,%s".formatted(w1,w2,"_",bigramCountInDecade,"_","_"));
+                context.write(outKey, outValue);
             }
             // <decade,w1,_> -- count c(w1) in decade
-            else if(keyTokens[W2_INDEX].equals("_")) {
+            else if(keyTokens[KEY_W2_INDEX].equals("_")) {
                 long w1count = 0;
                 for (LongWritable value : values) {
                     w1count += value.get();
                 }
-                String w1 = keyTokens[W1_INDEX];
-                //"hdfs:///jobs1/1990-w1-_"
-                Path filePath = new Path(folderPath, "%s-%s-_".formatted(decade,w1));
-                fs.create(filePath).writeUTF(String.valueOf(w1count));
+                outKey.set("%s,%s,%s".formatted(decade,w1,"_"));
+                outValue.set("%s,%s,%s,%s,%d,%s".formatted(w1,w2,"_","_",w1count,"_"));
+                context.write(outKey, outValue);
             }
             // <decade,_,w2> -- count c(w2) in decade
-            else if(keyTokens[W1_INDEX].equals("_")){
+            else if(keyTokens[KEY_W1_INDEX].equals("_")){
                 long w2count = 0;
                 for (LongWritable value : values) {
                     w2count += value.get();
                 }
-                String w2 = keyTokens[W2_INDEX];
-                //"hdfs:///jobs1/1990-_-w2"
-                Path filePath = new Path(folderPath, "%s-_-%s".formatted(decade,w2));
-                fs.create(filePath).writeUTF(String.valueOf(w2count));
+                outKey.set("%s,%s,%s".formatted(decade,"_",w2));
+                outValue.set("%s,%s,%s,%s,%s,%d".formatted(w1,w2,"_","_","_",w2count));
+                context.write(outKey, outValue);
             }
-            // <decade,w1,w2>
+            // <decade,w1,w2> -- count c(w1,w2) in decade
             else {
+                long c_w1_w2 = 0;
                 for (LongWritable value : values) {
-                    context.write(key, value);
+                    c_w1_w2 += value.get();
                 }
+                outKey.set("%s,%s,%s".formatted(decade,w1,w2));
+                outValue.set("%s,%s,%s,%s,%s,%s".formatted(w1,w2,c_w1_w2,"_","_","_"));
+                context.write(outKey, outValue);
             }
         }
     }
@@ -185,6 +186,9 @@ public class Step1 {
     public static void main(String[] args){
         System.out.println("[DEBUG] STEP 1 started!");
         readArgs(args);
+        System.out.println("[DEBUG] output path: " + _outputPath);
+        System.out.println("[DEBUG] input path: " + _inputPath);
+        System.out.println("[DEBUG] stop words file: " + _stopWordsFile);
         Configuration conf = new Configuration();
         conf.set("stopWordsFile", _stopWordsFile);
         try {
@@ -196,7 +200,7 @@ public class Step1 {
             job.setMapOutputKeyClass(Text.class);
             job.setMapOutputValueClass(LongWritable.class);
             job.setOutputKeyClass(Text.class);
-            job.setOutputValueClass(LongWritable.class);
+            job.setOutputValueClass(Text.class);
             FileInputFormat.addInputPath(job, _inputPath);
             FileOutputFormat.setOutputPath(job, _outputPath);
             System.exit(job.waitForCompletion(true) ? 0 : 1);

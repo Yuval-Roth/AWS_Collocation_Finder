@@ -1,7 +1,6 @@
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
@@ -22,9 +21,9 @@ public class Step3 {
 
     public static class NPMIMapper extends Mapper<LongWritable, Text, Text, Text> {
 
-        private static final int DECADE_KEY_INDEX = 0;
-        private static final int W1_KEY_INDEX = 1;
-        private static final int W2_KEY_INDEX = 2;
+        private static final int KEY_DECADE_INDEX = 0;
+        private static final int KEY_W1_INDEX = 1;
+        private static final int KEY_W2_INDEX = 2;
 
         private Text outKey;
         private Text outValue;
@@ -38,22 +37,21 @@ public class Step3 {
         @Override
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
             String[] values = value.toString().split("\\s+");
-
             String[] keyTokens = values[0].split(",");
-            double pmi = Double.parseDouble(values[1]);
-            String decade = keyTokens[DECADE_KEY_INDEX];
-            String w1 = keyTokens[W1_KEY_INDEX];
-            String w2 = keyTokens[W2_KEY_INDEX];
-            outKey.set(decade);
-            outValue.set("%s,%s,%s".formatted(w1, w2, pmi));
-            context.write(outKey, outValue);
+            String npmi = values[1];
+            outKey.set(keyTokens[KEY_DECADE_INDEX]);
+            outValue.set("%s,%s,%s".formatted(
+                    keyTokens[KEY_W1_INDEX],
+                    keyTokens[KEY_W2_INDEX],
+                    npmi));
+            context.write(outKey,outValue);
         }
     }
 
     public static class NPMIReducer extends Reducer<Text, Text, Text, Text> {
 
-        private static int NPMI_VALUE_INDEX = 2;
-        private FileSystem fs;
+        private static final int VALUE_NPMI_INDEX = 2;
+        FileSystem fs;
 
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
@@ -69,8 +67,7 @@ public class Step3 {
             double npmiTotal = 0;
             for(Text value : values){
                 String[] valueTokens = value.toString().split(",");
-                double npmi = Double.parseDouble(valueTokens[NPMI_VALUE_INDEX]);
-                npmiTotal += npmi;
+                npmiTotal += Double.parseDouble(valueTokens[VALUE_NPMI_INDEX]);
                 context.write(key, value);
             }
 

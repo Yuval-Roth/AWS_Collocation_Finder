@@ -11,7 +11,6 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import utils.DecadesPartitioner;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -27,12 +26,15 @@ public class Step2 {
 
 
         // <KEY INDEXES>
-        private static final int DECADE_KEY_INDEX = 0;
-        private static final int W1_KEY_INDEX = 1;
-        private static final int W2_KEY_INDEX = 2;
+        private static final int KEY_DECADE_INDEX = 0;
+        private static final int VALUE_W1_INDEX = 0;
+        private static final int VALUE_W2_INDEX = 1;
+        private static final int VALUE_C_W1_W2_INDEX = 2;
+        private static final int VALUE_BIGRAM_COUNT_IN_DECADE_INDEX = 3;
+        private static final int VALUE_C_W1_INDEX = 3;
+        private static final int VALUE_C_W2_INDEX = 4;
         // </KEY INDEXES>
 
-        FileSystem fs;
         private Text outKey;
         private Text outValue;
 
@@ -40,84 +42,74 @@ public class Step2 {
         protected void setup(Context context) throws IOException, InterruptedException {
             outKey = new Text();
             outValue = new Text();
-            fs = FileSystem.get(context.getConfiguration());
         }
 
         @Override
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
-
-            Path folderPath = new Path("hdfs:///step1/");
-            String[] values = value.toString().split("\\s+");
+            String[] values = key.toString().split("\\s+");
 
             String[] keyTokens = values[0].split(",");
-            String decade = keyTokens[DECADE_KEY_INDEX];
-            String w1 = keyTokens[W1_KEY_INDEX];
-            String w2 = keyTokens[W2_KEY_INDEX];
-            String countOverall = values[1];
-            String bigramCountInDecade;
-            String w1CountInDecade;
-            String w2CountInDecade;
-            Path bigramCountPath = new Path(folderPath, "%s-_-_".formatted(decade));
-            Path w1CountPath = new Path(folderPath, "%s-%s-_".formatted(decade, w1));
-            Path w2CountPath = new Path(folderPath, "%s-_-%s".formatted(decade, w2));
-            try(BufferedInputStream reader = new BufferedInputStream(fs.open(bigramCountPath))){
-                bigramCountInDecade = new String(reader.readAllBytes());
-            }
-            try(BufferedInputStream reader = new BufferedInputStream(fs.open(w1CountPath))){
-                w1CountInDecade = new String(reader.readAllBytes());
-            }
-            try(BufferedInputStream reader = new BufferedInputStream(fs.open(w2CountPath))){
-                w2CountInDecade = new String(reader.readAllBytes());
-            }
-            outKey.set(values[0]);
-            outValue.set("%s,%s,%s,%s".formatted(countOverall,
-                    bigramCountInDecade,w1CountInDecade,w2CountInDecade));
+            String[] valueTokens = values[1].split(",");
+
+            outKey.set("%s,%s,%s".formatted(
+                    keyTokens[KEY_DECADE_INDEX],
+                    valueTokens[VALUE_W1_INDEX],
+                    valueTokens[VALUE_W2_INDEX]));
+            outValue.set("%s,%s,%s,%s".formatted(
+                    valueTokens[VALUE_C_W1_W2_INDEX],
+                    valueTokens[VALUE_BIGRAM_COUNT_IN_DECADE_INDEX],
+                    valueTokens[VALUE_C_W1_INDEX],
+                    valueTokens[VALUE_C_W2_INDEX]));
             context.write(outKey, outValue);
         }
     }
 
     public static class C_W_Reducer extends Reducer<Text, Text, Text, DoubleWritable> {
 
-        // <KEY INDEXES>
-        private static final int DECADE_KEY_INDEX = 0;
-        // </KEY INDEXES>
-
         // <VALUE INDEXES>
-        private static final int COUNT_OVERALL_VALUE_INDEX = 0;
-        private static final int BIGRAM_COUNT_IN_DECADE_INDEX = 1;
-        private static final int W1_COUNT_IN_DECADE_INDEX = 2;
-        private static final int W2_COUNT_IN_DECADE_INDEX = 3;
+        private static final int VALUE_C_W1_W2_INDEX = 0;
+        private static final int VALUE_BIGRAM_COUNT_IN_DECADE_INDEX = 1;
+        private static final int VALUE_C_W1_INDEX = 2;
+        private static final int VALUE_C_W2_INDEX = 3;
         // </VALUE INDEXES>
 
-        FileSystem fs;
         DoubleWritable outValue;
         private double minPmi;
 
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
             outValue = new DoubleWritable();
-            fs = FileSystem.get(context.getConfiguration());
             minPmi = Double.parseDouble(context.getConfiguration().get("minPmi"));
         }
 
         @Override
         protected void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
-            for(Text value : values){
-                Double[] valueDoubles = Arrays.stream(value.toString().split(","))
-                        .map(Double::parseDouble)
-                        .toArray(Double[]::new);
-                double npmi = calculateNPMI(
-                        valueDoubles[BIGRAM_COUNT_IN_DECADE_INDEX],
-                        valueDoubles[COUNT_OVERALL_VALUE_INDEX],
-                        valueDoubles[W1_COUNT_IN_DECADE_INDEX],
-                        valueDoubles[W2_COUNT_IN_DECADE_INDEX]);
+            double c_w1_w2 = 0;
+            double N = 0;
+            double c_w1 = 0;
+            double c_w2 = 0;
 
-                if(npmi < minPmi){
-                    continue;
+            for(Text value : values){
+                String[] valueTokens = value.toString().split(",");
+                if(!valueTokens[VALUE_C_W1_W2_INDEX].equals("_")){
+                    c_w1_w2 += Double.parseDouble(valueTokens[VALUE_C_W1_W2_INDEX]);
                 }
-                outValue.set(npmi);
-                context.write(key, outValue);;
+                else if(!valueTokens[VALUE_BIGRAM_COUNT_IN_DECADE_INDEX].equals("_")){
+                    N += Double.parseDouble(valueTokens[VALUE_BIGRAM_COUNT_IN_DECADE_INDEX]);
+                }
+                else if(!valueTokens[VALUE_C_W1_INDEX].equals("_")){
+                    c_w1 += Double.parseDouble(valueTokens[VALUE_C_W1_INDEX]);
+                }
+                else if(!valueTokens[VALUE_C_W2_INDEX].equals("_")){
+                    c_w2 += Double.parseDouble(valueTokens[VALUE_C_W2_INDEX]);
+                }
             }
+            double npmi = calculateNPMI(c_w1_w2, N, c_w1, c_w2);
+            if(npmi < minPmi){
+                return;
+            }
+            outValue.set(npmi);
+            context.write(key, outValue);
         }
 
         private double calculateNPMI(double c_w1_w2, double N, double c_w1, double c_w2) {

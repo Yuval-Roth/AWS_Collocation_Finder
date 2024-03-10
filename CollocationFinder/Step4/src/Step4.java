@@ -38,7 +38,6 @@ public class Step4 {
         @Override
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
             String[] values = value.toString().split("\\s+");
-
             outKey.set(values[0]);
             outValue.set(values[1]);
             context.write(outKey, outValue);
@@ -82,10 +81,10 @@ public class Step4 {
                     continue;
                 }
 
-                outKey.set("%s,%s,%s,%s".formatted(key.toString(),
-                        npmi,
+                outKey.set("%s %s %s %s".formatted(key.toString(),
                         valueTokens[W1_VALUE_INDEX],
-                        valueTokens[W2_VALUE_INDEX]));
+                        valueTokens[W2_VALUE_INDEX],
+                        npmi));
                 context.write(outKey, outValue);
             }
         }
