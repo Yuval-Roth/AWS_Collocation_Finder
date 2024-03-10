@@ -136,7 +136,7 @@ public class Step1 {
         @Override
         protected void reduce(Text key, Iterable<LongWritable> values, Context context) throws IOException, InterruptedException {
 
-            Path folderPath = new Path("hdfs:///job1/");
+            Path folderPath = new Path("hdfs:///step1/");
             fs.mkdirs(folderPath);
             String[] keyTokens = key.toString().split(",");
             String decade = keyTokens[DECADE_INDEX];

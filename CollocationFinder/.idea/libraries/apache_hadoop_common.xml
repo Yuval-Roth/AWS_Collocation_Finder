@@ -104,6 +104,8 @@
       <root url="jar://$MAVEN_REPOSITORY$/org/xerial/snappy/snappy-java/1.1.8.2/snappy-java-1.1.8.2.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.ideaLibSources/hadoop-common-3.3.6-sources.jar!/" />
+    </SOURCES>
   </library>
 </component>

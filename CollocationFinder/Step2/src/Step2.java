@@ -21,13 +21,8 @@ public class Step2 {
 
     private static Path _inputPath;
     private static Path _outputPath;
+    private static Double _minPmi;
 
-
-    /**
-     * emits the following format:
-     *     decade,w1,_ -> w1,w2,count_overall,bigram_count_in_decade
-     *     decade,_,w2 -> w1,w2,count_overall,bigram_count_in_decade
-     */
     public static class C_W_Mapper extends Mapper<LongWritable, Text, Text, Text> {
 
 
@@ -51,7 +46,7 @@ public class Step2 {
         @Override
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
 
-            Path folderPath = new Path("hdfs:///job1/");
+            Path folderPath = new Path("hdfs:///step1/");
             String[] values = value.toString().split("\\s+");
 
             String[] keyTokens = values[0].split(",");
@@ -81,12 +76,6 @@ public class Step2 {
         }
     }
 
-    /**
-     * emits the following format:
-     *      decade,w1,_ -> w1,w2,count_overall,bigram_count_in_decade,w1_count_in_decade,_
-     *      or
-     *      decade,_,w2 -> w1,w2,count_overall,bigram_count_in_decade,_,w2_count_in_decade
-     */
     public static class C_W_Reducer extends Reducer<Text, Text, Text, DoubleWritable> {
 
         // <KEY INDEXES>
@@ -102,11 +91,13 @@ public class Step2 {
 
         FileSystem fs;
         DoubleWritable outValue;
+        private double minPmi;
 
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
             outValue = new DoubleWritable();
             fs = FileSystem.get(context.getConfiguration());
+            minPmi = Double.parseDouble(context.getConfiguration().get("minPmi"));
         }
 
         @Override
@@ -120,6 +111,10 @@ public class Step2 {
                         valueDoubles[COUNT_OVERALL_VALUE_INDEX],
                         valueDoubles[W1_COUNT_IN_DECADE_INDEX],
                         valueDoubles[W2_COUNT_IN_DECADE_INDEX]);
+
+                if(npmi < minPmi){
+                    continue;
+                }
                 outValue.set(npmi);
                 context.write(key, outValue);;
             }
@@ -135,6 +130,7 @@ public class Step2 {
         System.out.println("[DEBUG] STEP 2 started!");
         readArgs(args);
         Configuration conf = new Configuration();
+        conf.set("minPmi", String.valueOf(_minPmi));
         try {
             Job job = Job.getInstance(conf, "Step2");
             job.setJarByClass(Step2.class);
@@ -157,10 +153,35 @@ public class Step2 {
         List<String> argsList = new LinkedList<>();
         argsList.add("-inputurl");
         argsList.add("-outputurl");
-        argsList.add("-debug");
+        argsList.add("-minpmi");
+
         for (int i = 0; i < args.length; i++) {
             String arg = args[i].toLowerCase();
             String errorMessage;
+
+            if (arg.equals("-minpmi")) {
+                errorMessage = "Missing minimum pmi\n";
+                try{
+                    if(argsList.contains(args[i+1])){
+                        printErrorAndExit(errorMessage);
+                    }
+                    try{
+                        _minPmi = Double.parseDouble(args[i+1]);
+                    } catch (NumberFormatException e2){
+                        System.out.println();
+                        printErrorAndExit("Invalid minimum pmi\n");
+                    }
+                    if(_minPmi < 0) {
+                        System.out.println();
+                        printErrorAndExit("Invalid minimum pmi\n");
+                    }
+                    i++;
+                    continue;
+                } catch (IndexOutOfBoundsException e){
+                    System.out.println();
+                    printErrorAndExit(errorMessage);
+                }
+            }
             if (arg.equals("-inputurl")) {
                 errorMessage = "Missing input url\n";
                 try{
@@ -190,12 +211,18 @@ public class Step2 {
                 }
             }
         }
+
+        if(_minPmi == null){
+            printErrorAndExit("Argument for minimum pmi not found\n");
+        }
         if(_inputPath == null){
             printErrorAndExit("Argument for input url not found\n");
         }
         if(_outputPath == null){
             printErrorAndExit("Argument for output url not found\n");
         }
+
+
     }
 
     private static void printErrorAndExit(String errorMessage) {

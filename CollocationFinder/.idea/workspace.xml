@@ -2,7 +2,11 @@
 <project version="4">
   <component name="ArtifactsWorkspaceSettings">
     <artifacts-to-build>
+      <artifact name="main:jar" />
+      <artifact name="step1:jar" />
       <artifact name="step2:jar" />
+      <artifact name="step3:jar" />
+      <artifact name="step4:jar" />
     </artifacts-to-build>
   </component>
   <component name="AutoImportSettings">
@@ -10,12 +14,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="38712fba-5bfc-473f-a93a-bf4185f68234" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/apache_hadoop_common.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/apache_hadoop_common.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Step1/src/Step1.java" beforeDir="false" afterPath="$PROJECT_DIR$/Step1/src/Step1.java" afterDir="false" />
     </list>
-    <list id="e1d2580c-fec9-453b-b142-f9bd3ac10412" name="Changes by adidi" comment="">
-      <change beforePath="$PROJECT_DIR$/Step1/src/Step1.java" beforeDir="false" afterPath="$PROJECT_DIR$/Step1/src/Step1.java" afterDir="false" />
-    </list>
+    <list id="e1d2580c-fec9-453b-b142-f9bd3ac10412" name="Changes by adidi" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -23,43 +25,6 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
-  </component>
-  <component name="LineStatusTrackerManager">
-    <file path="$PROJECT_DIR$/step1/src/Step1.java">
-      <ranges>
-        <range start1="4" end1="6" start2="4" end2="4" changelist="38712fba-5bfc-473f-a93a-bf4185f68234" />
-        <range start1="8" end1="8" start2="6" end2="7" changelist="38712fba-5bfc-473f-a93a-bf4185f68234" />
-        <range start1="18" end1="20" start2="17" end2="17" changelist="38712fba-5bfc-473f-a93a-bf4185f68234" />
-        <range start1="21" end1="22" start2="18" end2="18" changelist="38712fba-5bfc-473f-a93a-bf4185f68234" />
-        <range start1="26" end1="37" start2="22" end2="22" changelist="38712fba-5bfc-473f-a93a-bf4185f68234" />
-        <range start1="41" end1="42" start2="26" end2="26" changelist="38712fba-5bfc-473f-a93a-bf4185f68234" />
-        <range start1="45" end1="49" start2="29" end2="33" changelist="38712fba-5bfc-473f-a93a-bf4185f68234" />
-        <range start1="50" end1="51" start2="34" end2="35" changelist="38712fba-5bfc-473f-a93a-bf4185f68234" />
-        <range start1="52" end1="52" start2="36" end2="41" changelist="38712fba-5bfc-473f-a93a-bf4185f68234" />
-        <range start1="54" end1="56" start2="43" end2="48" changelist="38712fba-5bfc-473f-a93a-bf4185f68234" />
-        <range start1="85" end1="90" start2="77" end2="83" changelist="38712fba-5bfc-473f-a93a-bf4185f68234" />
-        <range start1="98" end1="98" start2="91" end2="96" changelist="38712fba-5bfc-473f-a93a-bf4185f68234" />
-        <range start1="125" end1="126" start2="123" end2="124" changelist="38712fba-5bfc-473f-a93a-bf4185f68234" />
-        <range start1="127" end1="132" start2="125" end2="129" changelist="38712fba-5bfc-473f-a93a-bf4185f68234" />
-        <range start1="135" end1="136" start2="132" end2="133" changelist="38712fba-5bfc-473f-a93a-bf4185f68234" />
-        <range start1="139" end1="140" start2="136" end2="140" changelist="38712fba-5bfc-473f-a93a-bf4185f68234" />
-        <range start1="141" end1="141" start2="141" end2="142" changelist="e1d2580c-fec9-453b-b142-f9bd3ac10412" />
-        <range start1="142" end1="143" start2="143" end2="145" changelist="38712fba-5bfc-473f-a93a-bf4185f68234" />
-        <range start1="144" end1="148" start2="146" end2="149" changelist="38712fba-5bfc-473f-a93a-bf4185f68234" />
-        <range start1="149" end1="151" start2="150" end2="153" changelist="38712fba-5bfc-473f-a93a-bf4185f68234" />
-        <range start1="152" end1="154" start2="154" end2="156" changelist="38712fba-5bfc-473f-a93a-bf4185f68234" />
-        <range start1="155" end1="159" start2="157" end2="160" changelist="38712fba-5bfc-473f-a93a-bf4185f68234" />
-        <range start1="160" end1="161" start2="161" end2="168" changelist="38712fba-5bfc-473f-a93a-bf4185f68234" />
-        <range start1="162" end1="166" start2="169" end2="172" changelist="38712fba-5bfc-473f-a93a-bf4185f68234" />
-        <range start1="167" end1="168" start2="173" end2="177" changelist="38712fba-5bfc-473f-a93a-bf4185f68234" />
-        <range start1="169" end1="169" start2="178" end2="184" changelist="38712fba-5bfc-473f-a93a-bf4185f68234" />
-        <range start1="177" end1="178" start2="192" end2="192" changelist="38712fba-5bfc-473f-a93a-bf4185f68234" />
-        <range start1="185" end1="186" start2="199" end2="200" changelist="38712fba-5bfc-473f-a93a-bf4185f68234" />
-        <range start1="187" end1="188" start2="201" end2="202" changelist="38712fba-5bfc-473f-a93a-bf4185f68234" />
-        <range start1="201" end1="202" start2="215" end2="215" changelist="38712fba-5bfc-473f-a93a-bf4185f68234" />
-        <range start1="205" end1="209" start2="218" end2="218" changelist="38712fba-5bfc-473f-a93a-bf4185f68234" />
-      </ranges>
-    </file>
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 3
@@ -171,7 +136,7 @@
       <workItem from="1709811196554" duration="727000" />
       <workItem from="1709811940639" duration="262000" />
       <workItem from="1709812215511" duration="5079000" />
-      <workItem from="1710014724964" duration="13569000" />
+      <workItem from="1710014724964" duration="19360000" />
     </task>
     <servers />
   </component>
