@@ -14,7 +14,6 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="38712fba-5bfc-473f-a93a-bf4185f68234" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/libraries/apache_hadoop_common.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/apache_hadoop_common.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <list id="e1d2580c-fec9-453b-b142-f9bd3ac10412" name="Changes by adidi" comment="" />
@@ -136,7 +135,7 @@
       <workItem from="1709811196554" duration="727000" />
       <workItem from="1709811940639" duration="262000" />
       <workItem from="1709812215511" duration="5079000" />
-      <workItem from="1710014724964" duration="19360000" />
+      <workItem from="1710014724964" duration="20614000" />
     </task>
     <servers />
   </component>
