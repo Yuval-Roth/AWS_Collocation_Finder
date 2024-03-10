@@ -1,16 +1,13 @@
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import utils.DecadesPartitioner;
-import utils.DescendingComparator;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -86,6 +83,37 @@ public class Step4 {
                         valueTokens[W2_VALUE_INDEX],
                         npmi));
                 context.write(outKey, outValue);
+            }
+        }
+    }
+
+    public static class DescendingComparator extends WritableComparator {
+
+        private static final int DECADE_INDEX = 0;
+        private static final int W1_INDEX = 1;
+        private static final int W2_INDEX = 2;
+        private static final int NPMI_INDEX = 3;
+
+        DescendingComparator() {
+            super(Text.class, true);
+        }
+
+        @Override
+        public int compare(WritableComparable a, WritableComparable b) {
+            String[] aTokens = a.toString().split("\\s+");
+            String[] bTokens = b.toString().split("\\s+");
+            int num;
+            if((num = aTokens[DECADE_INDEX].compareTo(bTokens[DECADE_INDEX])) != 0){
+                return num;
+            }
+            else if ((num = aTokens[NPMI_INDEX].compareTo(bTokens[NPMI_INDEX])) != 0){
+                return -1 * num;
+            }
+            else if ((num = aTokens[W1_INDEX].compareTo(bTokens[W1_INDEX])) != 0){
+                return num;
+            }
+            else {
+                return aTokens[W2_INDEX].compareTo(bTokens[W2_INDEX]);
             }
         }
     }
