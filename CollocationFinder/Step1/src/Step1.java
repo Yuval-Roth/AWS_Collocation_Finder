@@ -146,7 +146,6 @@ public class Step1 {
                 long bigramCountInDecade = 0;
                 for (LongWritable value : values) {
                     bigramCountInDecade += value.get();
-//                    context.write(key, value);
                 }
                 //"hdfs:///jobs1/1990-_-_"
                 Path filePath = new Path(folderPath, "%s-_-_".formatted(decade));
@@ -157,7 +156,6 @@ public class Step1 {
                 long w1count = 0;
                 for (LongWritable value : values) {
                     w1count += value.get();
-//                    context.write(key, value);
                 }
                 String w1 = keyTokens[W1_INDEX];
                 //"hdfs:///jobs1/1990-w1-_"
@@ -169,7 +167,6 @@ public class Step1 {
                 long w2count = 0;
                 for (LongWritable value : values) {
                     w2count += value.get();
-//                    context.write(key, value);
                 }
                 String w2 = keyTokens[W2_INDEX];
                 //"hdfs:///jobs1/1990-_-w2"
