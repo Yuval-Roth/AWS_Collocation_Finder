@@ -8,11 +8,13 @@ import com.amazonaws.services.s3.model.S3Object;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -154,7 +156,7 @@ public class EMRSimulator {
         protected void reduce(String key, Iterable<Long> values, Context context) throws IOException, InterruptedException {
 
             Path folderPath = new Path("hdfs:///step1/");
-            fs.mkdirs(folderPath);
+//            fs.mkdirs(folderPath);
             String[] keyTokens = key.toString().split(",");
             String decade = keyTokens[KEY_DECADE_INDEX];
             String w1 = keyTokens[KEY_W1_INDEX];
@@ -200,94 +202,105 @@ public class EMRSimulator {
         }
 
         // <KEY INDEXES>
-        private static final int KEY_DECADE_INDEX = 0;
-        private static final int VALUE_W1_INDEX = 0;
-        private static final int VALUE_W2_INDEX = 1;
-        private static final int VALUE_C_W1_W2_INDEX = 2;
-        private static final int VALUE_BIGRAM_COUNT_IN_DECADE_INDEX = 3;
-        private static final int VALUE_C_W1_INDEX = 4;
-        private static final int VALUE_C_W2_INDEX = 5;
+        private static final int DECADE_KEY_INDEX = 0;
+        private static final int W1_KEY_INDEX = 1;
+        private static final int W2_KEY_INDEX = 2;
         // </KEY INDEXES>
+
+        FileSystem fs;
+        private Text outKey;
+        private Text outValue;
 
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
-
+            outKey = new Text();
+            outValue = new Text();
+            fs = FileSystem.get(context.getConfiguration());
         }
 
         @Override
         protected void map(Long key, String value, Context context) throws IOException, InterruptedException {
+
+            Path folderPath = new Path("hdfs:///step1/");
             String[] values = value.toString().split("\\s+");
 
             String[] keyTokens = values[0].split(",");
-            String[] valueTokens = values[1].split(",");
+            String decade = keyTokens[DECADE_KEY_INDEX];
+            String w1 = keyTokens[W1_KEY_INDEX];
+            String w2 = keyTokens[W2_KEY_INDEX];
+            String countOverall = values[1];
+            String bigramCountInDecade;
+            String w1CountInDecade;
+            String w2CountInDecade;
+            Path bigramCountPath = new Path(folderPath, "%s-_-_".formatted(decade));
+            Path w1CountPath = new Path(folderPath, "%s-%s-_".formatted(decade, w1));
+            Path w2CountPath = new Path(folderPath, "%s-_-%s".formatted(decade, w2));
+//            try(BufferedInputStream reader = new BufferedInputStream(fs.open(bigramCountPath))){
+//                bigramCountInDecade = new String(reader.readAllBytes());
+//            }
+//            try(BufferedInputStream reader = new BufferedInputStream(fs.open(w1CountPath))){
+//                w1CountInDecade = new String(reader.readAllBytes());
+//            }
+//            try(BufferedInputStream reader = new BufferedInputStream(fs.open(w2CountPath))){
+//                w2CountInDecade = new String(reader.readAllBytes());
+//            }
+            bigramCountInDecade = sfs.get(bigramCountPath.toString());
+            w1CountInDecade = sfs.get(w1CountPath.toString());
+            w2CountInDecade = sfs.get(w2CountPath.toString());
 
-            String outKey = "%s,%s,%s".formatted(
-                    keyTokens[KEY_DECADE_INDEX],
-                    valueTokens[VALUE_W1_INDEX],
-                    valueTokens[VALUE_W2_INDEX]);
-            String outValue = "%s,%s,%s,%s".formatted(
-                    valueTokens[VALUE_C_W1_W2_INDEX],
-                    valueTokens[VALUE_BIGRAM_COUNT_IN_DECADE_INDEX],
-                    valueTokens[VALUE_C_W1_INDEX],
-                    valueTokens[VALUE_C_W2_INDEX]);
+            String outKey = values[0];
+            String outValue = "%s,%s,%s,%s".formatted(countOverall,
+                    bigramCountInDecade,w1CountInDecade,w2CountInDecade);
             context.write(outKey, outValue);
         }
     }
 
-    public static class Step2Reducer extends SimulatedReducer<String,String,String,String>{
-
-        // <VALUE INDEXES>
-        private static final int VALUE_C_W1_W2_INDEX = 0;
-        private static final int VALUE_BIGRAM_COUNT_IN_DECADE_INDEX = 1;
-        private static final int VALUE_C_W1_INDEX = 2;
-        private static final int VALUE_C_W2_INDEX = 3;
-        // </VALUE INDEXES>
-
-        Text outValue;
-        private double minPmi;
+    public static class Step2Reducer extends SimulatedReducer<String,String,String,Double>{
 
         public Step2Reducer(Map<String, Iterable<String>> _input, Configuration _conf) {
             super(_input, _conf);
         }
+        // <VALUE INDEXES>
+        private static final int COUNT_OVERALL_VALUE_INDEX = 0;
+        private static final int BIGRAM_COUNT_IN_DECADE_INDEX = 1;
+        private static final int W1_COUNT_IN_DECADE_INDEX = 2;
+        private static final int W2_COUNT_IN_DECADE_INDEX = 3;
+        // </VALUE INDEXES>
+
+        FileSystem fs;
+        DoubleWritable outValue;
+        private double minPmi;
 
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
-            outValue = new Text();
+            outValue = new DoubleWritable();
+            fs = FileSystem.get(context.getConfiguration());
             minPmi = Double.parseDouble(context.getConfiguration().get("minPmi"));
         }
 
         @Override
         protected void reduce(String key, Iterable<String> values, Context context) throws IOException, InterruptedException {
-            double c_w1_w2 = 0;
-            double N = 0;
-            double c_w1 = 0;
-            double c_w2 = 0;
-
             for(String value : values){
-                String[] valueTokens = value.toString().split(",");
-                if(!valueTokens[VALUE_C_W1_W2_INDEX].equals("_")){
-                    c_w1_w2 = Long.parseLong(valueTokens[VALUE_C_W1_W2_INDEX]);
+                Double[] valueDoubles = Arrays.stream(value.toString().split(","))
+                        .map(Double::parseDouble)
+                        .toArray(Double[]::new);
+                double npmi = calculateNPMI(
+                        valueDoubles[COUNT_OVERALL_VALUE_INDEX],
+                        valueDoubles[BIGRAM_COUNT_IN_DECADE_INDEX],
+                        valueDoubles[W1_COUNT_IN_DECADE_INDEX],
+                        valueDoubles[W2_COUNT_IN_DECADE_INDEX]);
+
+                if(npmi < minPmi){
+                    continue;
                 }
-                else if(!valueTokens[VALUE_BIGRAM_COUNT_IN_DECADE_INDEX].equals("_")){
-                    N = Long.parseLong(valueTokens[VALUE_BIGRAM_COUNT_IN_DECADE_INDEX]);
-                }
-                else if(!valueTokens[VALUE_C_W1_INDEX].equals("_")){
-                    c_w1 = Long.parseLong(valueTokens[VALUE_C_W1_INDEX]);
-                }
-                else if(!valueTokens[VALUE_C_W2_INDEX].equals("_")){
-                    c_w2 = Long.parseLong(valueTokens[VALUE_C_W2_INDEX]);
-                }
+//                outValue.set(npmi);
+                context.write(key, npmi);;
             }
-            double npmi = calculateNPMI(c_w1_w2, N, c_w1, c_w2);
-            if(npmi < minPmi){
-                return;
-            }
-            String outValue = String.valueOf(npmi);
-            context.write(key, outValue);
         }
 
         private double calculateNPMI(double c_w1_w2, double N, double c_w1, double c_w2) {
             double pmi = Math.log(c_w1_w2) + Math.log(N) - Math.log(c_w1) - Math.log(c_w2);
+            System.out.printf("pmi: %f, log: %f%n", pmi, Math.log(c_w1_w2 / N));
             return -1 * pmi / Math.log(c_w1_w2 / N);
         }
     }

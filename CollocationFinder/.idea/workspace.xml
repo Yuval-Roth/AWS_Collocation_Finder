@@ -2,11 +2,7 @@
 <project version="4">
   <component name="ArtifactsWorkspaceSettings">
     <artifacts-to-build>
-      <artifact name="main:jar" />
-      <artifact name="step1:jar" />
       <artifact name="step2:jar" />
-      <artifact name="step3:jar" />
-      <artifact name="step4:jar" />
     </artifacts-to-build>
   </component>
   <component name="AutoImportSettings">
@@ -14,8 +10,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="38712fba-5bfc-473f-a93a-bf4185f68234" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/simulation/src/emrSimulation/EMRSimulator.java" beforeDir="false" afterPath="$PROJECT_DIR$/simulation/src/emrSimulation/EMRSimulator.java" afterDir="false" />
     </list>
     <list id="e1d2580c-fec9-453b-b142-f9bd3ac10412" name="Changes by adidi" comment="" />
     <option name="SHOW_DIALOG" value="false" />
@@ -40,6 +36,7 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "Application.CollocationFinder.executor": "Run",
+    "Application.EMRSimulator.executor": "Debug",
     "Application.Step1.executor": "Run",
     "Application.Step2.executor": "Debug",
     "Downloaded.Files.Path.Enabled": "false",
@@ -82,11 +79,25 @@
       <recent name="" />
     </key>
   </component>
-  <component name="RunManager" selected="Application.CollocationFinder">
+  <component name="RunManager" selected="Application.EMRSimulator">
     <configuration name="CollocationFinder" type="Application" factoryName="Application" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="CollocationFinder" />
       <module name="main" />
       <option name="PROGRAM_PARAMETERS" value="-minpmi 0 -relminpmi 0 -inputurl s3://distributed-systems-2024-bucket-yuval-adi/hadoop/inputs/small" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="EMRSimulator" type="Application" factoryName="Application" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="emrSimulation.EMRSimulator" />
+      <module name="simulation" />
+      <option name="PROGRAM_PARAMETERS" value="C:\Users\Yuval\Desktop\small" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="emrSimulation.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -107,6 +118,7 @@
       </method>
     </configuration>
     <list>
+      <item itemvalue="Application.EMRSimulator" />
       <item itemvalue="Application.CollocationFinder" />
       <item itemvalue="Application.Step2" />
       <item itemvalue="Application.Step1" />
@@ -138,6 +150,7 @@
       <workItem from="1709811940639" duration="262000" />
       <workItem from="1709812215511" duration="5079000" />
       <workItem from="1710014724964" duration="20614000" />
+      <workItem from="1710195701686" duration="4845000" />
     </task>
     <servers />
   </component>
@@ -161,6 +174,20 @@
     </ignored-roots>
   </component>
   <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/simulation/src/emrSimulation/EMRSimulator.java</url>
+          <line>49</line>
+          <option name="timeStamp" value="22" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/simulation/src/emrSimulation/EMRSimulator.java</url>
+          <line>286</line>
+          <option name="timeStamp" value="34" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
     <pin-to-top-manager>
       <pinned-members>
         <PinnedItemInfo parentTag="java.util.TreeMap$Entry" memberName="value" />

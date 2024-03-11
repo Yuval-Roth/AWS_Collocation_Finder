@@ -149,7 +149,7 @@ public class Step1 {
             }
 
             // <decade,w1,w2> -- count C(w1,w2) in decade
-            if(! (w1.equals("_") && w2.equals("_"))){
+            if(! (w1.equals("_") || w2.equals("_"))){
                 context.write(key, new LongWritable(counter));
             } else{
                 Path filePath;

@@ -85,29 +85,24 @@ public class Step2 {
         private static final int W2_COUNT_IN_DECADE_INDEX = 3;
         // </VALUE INDEXES>
 
-        FileSystem fs;
         DoubleWritable outValue;
         private double minPmi;
 
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
             outValue = new DoubleWritable();
-            fs = FileSystem.get(context.getConfiguration());
             minPmi = Double.parseDouble(context.getConfiguration().get("minPmi"));
         }
 
         @Override
         protected void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
             for(Text value : values){
-                Double[] valueDoubles = Arrays.stream(value.toString().split(","))
-                        .map(Double::parseDouble)
-                        .toArray(Double[]::new);
-                double npmi = calculateNPMI(
-                        valueDoubles[COUNT_OVERALL_VALUE_INDEX],
-                        valueDoubles[BIGRAM_COUNT_IN_DECADE_INDEX],
-                        valueDoubles[W1_COUNT_IN_DECADE_INDEX],
-                        valueDoubles[W2_COUNT_IN_DECADE_INDEX]);
-
+                String[] valueTokens = value.toString().split(",");
+                double countOverAll = Double.parseDouble(valueTokens[COUNT_OVERALL_VALUE_INDEX]);
+                double bigramCountInDecade = Double.parseDouble(valueTokens[BIGRAM_COUNT_IN_DECADE_INDEX]);
+                double w1CountInDecade = Double.parseDouble(valueTokens[W1_COUNT_IN_DECADE_INDEX]);
+                double w2CountInDecade = Double.parseDouble(valueTokens[W2_COUNT_IN_DECADE_INDEX]);
+                double npmi = calculateNPMI(countOverAll, bigramCountInDecade, w1CountInDecade, w2CountInDecade);
                 if(npmi < minPmi){
                     continue;
                 }
