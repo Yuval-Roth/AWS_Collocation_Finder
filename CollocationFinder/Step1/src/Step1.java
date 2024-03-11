@@ -123,9 +123,9 @@ public class Step1 {
      */
     public static class BigramsPerDecadeReducer extends Reducer<Text, LongWritable, Text, LongWritable> {
 
-        private static final int DECADE_INDEX = 0;
-        private static final int W1_INDEX = 1;
-        private static final int W2_INDEX = 2;
+        private static final int KEY_DECADE_INDEX = 0;
+        private static final int KEY_W1_INDEX = 1;
+        private static final int KEY_W2_INDEX = 2;
         FileSystem fs;
 
         @Override
@@ -139,45 +139,38 @@ public class Step1 {
             Path folderPath = new Path("hdfs:///step1/");
             fs.mkdirs(folderPath);
             String[] keyTokens = key.toString().split(",");
-            String decade = keyTokens[DECADE_INDEX];
+            String decade = keyTokens[KEY_DECADE_INDEX];
+            String w1 = keyTokens[KEY_W1_INDEX];
+            String w2 = keyTokens[KEY_W2_INDEX];
 
-            // <decade,_,_> -- count bigrams in decade (N)
-            if(keyTokens[W1_INDEX].equals("_") && keyTokens[W2_INDEX].equals("_")){
-                long bigramCountInDecade = 0;
-                for (LongWritable value : values) {
-                    bigramCountInDecade += value.get();
-                }
-                //"hdfs:///jobs1/1990-_-_"
-                Path filePath = new Path(folderPath, "%s-_-_".formatted(decade));
-                fs.create(filePath).writeUTF(String.valueOf(bigramCountInDecade));
+            long counter = 0;
+            for (LongWritable value : values) {
+                counter += value.get();
             }
-            // <decade,w1,_> -- count c(w1) in decade
-            else if(keyTokens[W2_INDEX].equals("_")) {
-                long w1count = 0;
-                for (LongWritable value : values) {
-                    w1count += value.get();
+
+            // <decade,w1,w2> -- count C(w1,w2) in decade
+            if(! (w1.equals("_") && w2.equals("_"))){
+                context.write(key, new LongWritable(counter));
+            } else{
+                Path filePath;
+
+                // <decade,_,_> -- count bigrams in decade (N)
+                if(keyTokens[KEY_W1_INDEX].equals("_") && keyTokens[KEY_W2_INDEX].equals("_")){
+                    //"hdfs:///jobs1/1990-_-_"
+                    filePath = new Path(folderPath, "%s-_-_".formatted(decade));
                 }
-                String w1 = keyTokens[W1_INDEX];
-                //"hdfs:///jobs1/1990-w1-_"
-                Path filePath = new Path(folderPath, "%s-%s-_".formatted(decade,w1));
-                fs.create(filePath).writeUTF(String.valueOf(w1count));
-            }
-            // <decade,_,w2> -- count c(w2) in decade
-            else if(keyTokens[W1_INDEX].equals("_")){
-                long w2count = 0;
-                for (LongWritable value : values) {
-                    w2count += value.get();
+                // <decade,w1,_> -- count c(w1) in decade
+                else if(keyTokens[KEY_W2_INDEX].equals("_")) {
+                    //"hdfs:///jobs1/1990-w1-_"
+                    filePath = new Path(folderPath, "%s-%s-_".formatted(decade,w1));
                 }
-                String w2 = keyTokens[W2_INDEX];
-                //"hdfs:///jobs1/1990-_-w2"
-                Path filePath = new Path(folderPath, "%s-_-%s".formatted(decade,w2));
-                fs.create(filePath).writeUTF(String.valueOf(w2count));
-            }
-            // <decade,w1,w2>
-            else {
-                for (LongWritable value : values) {
-                    context.write(key, value);
+                // <decade,_,w2> -- count c(w2) in decade
+                else {
+                    //"hdfs:///jobs1/1990-_-w2"
+                    filePath = new Path(folderPath, "%s-_-%s".formatted(decade,w2));
                 }
+
+                fs.create(filePath).writeUTF(String.valueOf(counter));
             }
         }
     }

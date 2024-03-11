@@ -78,10 +78,6 @@ public class Step2 {
 
     public static class C_W_Reducer extends Reducer<Text, Text, Text, DoubleWritable> {
 
-        // <KEY INDEXES>
-        private static final int DECADE_KEY_INDEX = 0;
-        // </KEY INDEXES>
-
         // <VALUE INDEXES>
         private static final int COUNT_OVERALL_VALUE_INDEX = 0;
         private static final int BIGRAM_COUNT_IN_DECADE_INDEX = 1;
@@ -107,8 +103,8 @@ public class Step2 {
                         .map(Double::parseDouble)
                         .toArray(Double[]::new);
                 double npmi = calculateNPMI(
-                        valueDoubles[BIGRAM_COUNT_IN_DECADE_INDEX],
                         valueDoubles[COUNT_OVERALL_VALUE_INDEX],
+                        valueDoubles[BIGRAM_COUNT_IN_DECADE_INDEX],
                         valueDoubles[W1_COUNT_IN_DECADE_INDEX],
                         valueDoubles[W2_COUNT_IN_DECADE_INDEX]);
 

@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/CollocationFinder.iml" filepath="$PROJECT_DIR$/CollocationFinder.iml" />
       <module fileurl="file://$PROJECT_DIR$/main/main.iml" filepath="$PROJECT_DIR$/main/main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/simulation/simulation.iml" filepath="$PROJECT_DIR$/simulation/simulation.iml" />
       <module fileurl="file://$PROJECT_DIR$/step1/step1.iml" filepath="$PROJECT_DIR$/step1/step1.iml" />
       <module fileurl="file://$PROJECT_DIR$/step2/step2.iml" filepath="$PROJECT_DIR$/step2/step2.iml" />
       <module fileurl="file://$PROJECT_DIR$/step3/step3.iml" filepath="$PROJECT_DIR$/step3/step3.iml" />
