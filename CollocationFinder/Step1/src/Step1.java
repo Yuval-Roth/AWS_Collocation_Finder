@@ -50,7 +50,7 @@ public class Step1 {
         @Override
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
             String[] tokens = value.toString().split("\\s+");
-            
+
             // remove tags from words if they exist
             int index;
             if ((index = tokens[W1_INDEX].indexOf("_")) != -1){
@@ -149,45 +149,46 @@ public class Step1 {
 
         @Override
         protected void reduce(Text key, Iterable<LongWritable> values, Context context) throws IOException, InterruptedException {
+            try{
+                Path folderPath = new Path("hdfs:///step1/");
+                fs.mkdirs(folderPath);
+                String[] keyTokens = key.toString().split(",");
+                String decade = keyTokens[KEY_DECADE_INDEX];
+                String w1 = keyTokens[KEY_W1_INDEX];
+                String w2 = keyTokens[KEY_W2_INDEX];
 
-            Path folderPath = new Path("hdfs:///step1/");
-            fs.mkdirs(folderPath);
-            String[] keyTokens = key.toString().split(",");
-            String decade = keyTokens[KEY_DECADE_INDEX];
-            String w1 = keyTokens[KEY_W1_INDEX];
-            String w2 = keyTokens[KEY_W2_INDEX];
-
-            long counter = 0;
-            for (LongWritable value : values) {
-                counter += value.get();
-            }
-
-            // <decade,w1,w2> -- count C(w1,w2) in decade
-            if(! (w1.equals("_") || w2.equals("_"))){
-                context.write(key, new LongWritable(counter));
-            } else{
-                Path filePath;
-
-                // <decade,_,_> -- count bigrams in decade (N)
-                if(keyTokens[KEY_W1_INDEX].equals("_") && keyTokens[KEY_W2_INDEX].equals("_")){
-                    //"hdfs:///jobs1/1990-_-_"
-                    filePath = new Path(folderPath, "%s-_-_".formatted(decade));
-                }
-                // <decade,w1,_> -- count c(w1) in decade
-                else if(keyTokens[KEY_W2_INDEX].equals("_")) {
-                    //"hdfs:///jobs1/1990-w1-_"
-                    filePath = new Path(folderPath, "%s-%s-_".formatted(decade,w1));
-                }
-                // <decade,_,w2> -- count c(w2) in decade
-                else {
-                    //"hdfs:///jobs1/1990-_-w2"
-                    filePath = new Path(folderPath, "%s-_-%s".formatted(decade,w2));
+                long counter = 0;
+                for (LongWritable value : values) {
+                    counter += value.get();
                 }
 
-                OutputStream s = fs.create(filePath);
-                s.write(String.valueOf(counter).getBytes());
-                s.close();
-            }
+                // <decade,w1,w2> -- count C(w1,w2) in decade
+                if(! (w1.equals("_") || w2.equals("_"))){
+                    context.write(key, new LongWritable(counter));
+                } else{
+                    Path filePath;
+
+                    // <decade,_,_> -- count bigrams in decade (N)
+                    if(keyTokens[KEY_W1_INDEX].equals("_") && keyTokens[KEY_W2_INDEX].equals("_")){
+                        //"hdfs:///jobs1/1990-_-_"
+                        filePath = new Path(folderPath, "%s-_-_".formatted(decade));
+                    }
+                    // <decade,w1,_> -- count c(w1) in decade
+                    else if(keyTokens[KEY_W2_INDEX].equals("_")) {
+                        //"hdfs:///jobs1/1990-w1-_"
+                        filePath = new Path(folderPath, "%s-%s-_".formatted(decade,w1));
+                    }
+                    // <decade,_,w2> -- count c(w2) in decade
+                    else {
+                        //"hdfs:///jobs1/1990-_-w2"
+                        filePath = new Path(folderPath, "%s-_-%s".formatted(decade,w2));
+                    }
+
+                    OutputStream s = fs.create(filePath);
+                    s.write(String.valueOf(counter).getBytes());
+                    s.close();
+                }
+            } catch (IOException ignored){}
         }
     }
 

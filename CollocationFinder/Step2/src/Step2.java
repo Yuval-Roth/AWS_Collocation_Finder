@@ -62,22 +62,24 @@ public class Step2 {
             Path w1CountPath = new Path(folderPath, "%s-%s-_".formatted(decade, w1));
             Path w2CountPath = new Path(folderPath, "%s-_-%s".formatted(decade, w2));
 
-            double c_w1_w2 = Double.parseDouble(countOverall);
-            double N = Double.parseDouble(getValue(bigramCountPath));
-            double c_w1 = Double.parseDouble(getValue(w1CountPath));
-            double c_w2 = Double.parseDouble(getValue(w2CountPath));
+            try{
+                double c_w1_w2 = Double.parseDouble(countOverall);
+                double N = Double.parseDouble(getValue(bigramCountPath));
+                double c_w1 = Double.parseDouble(getValue(w1CountPath));
+                double c_w2 = Double.parseDouble(getValue(w2CountPath));
 
-            if(c_w1_w2 == N || Math.log(c_w1_w2/N) == 0.0) {return; /*0 in the denominator*/}
-            if(c_w1 == 1 && c_w2 == 1 && c_w1_w2 == 1) {return;}
+                if(c_w1_w2 == N || Math.log(c_w1_w2/N) == 0.0) {return; /*0 in the denominator*/}
+                if(c_w1 == 1 && c_w2 == 1 && c_w1_w2 == 1) {return;}
 
-            double npmi = calculateNPMI(c_w1_w2, N, c_w1, c_w2);
-            if(npmi < minPmi || npmi >= 1.0){
-                return;
-            }
+                double npmi = calculateNPMI(c_w1_w2, N, c_w1, c_w2);
+                if(npmi < minPmi || npmi >= 1.0){
+                    return;
+                }
 
-            outKey.set(decade);
-            outValue.set("%s,%s,%s".formatted(w1,w2,npmi));
-            context.write(outKey, outValue);;
+                outKey.set(decade);
+                outValue.set("%s,%s,%s".formatted(w1,w2,npmi));
+                context.write(outKey, outValue);
+            } catch (IOException ignored){}
         }
 
         private double calculateNPMI(double c_w1_w2, double N, double c_w1, double c_w2) {
@@ -111,20 +113,23 @@ public class Step2 {
 
         @Override
         protected void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
-            Path folderPath = new Path("hdfs:///step3/");
-            fs.mkdirs(folderPath);
 
-            double npmiTotalInDecade = 0;
-            for(Text value : values){
-                String[] valueTokens = value.toString().split(",");
-                npmiTotalInDecade += Double.parseDouble(valueTokens[NPMI_VALUE_INDEX]);
-                context.write(key, value);
-            }
+            try{
+                Path folderPath = new Path("hdfs:///step3/");
+                fs.mkdirs(folderPath);
 
-            Path filePath = new Path(folderPath, key.toString());
-            OutputStream s = fs.create(filePath);
-            s.write(String.valueOf(npmiTotalInDecade).getBytes());
-            s.close();
+                double npmiTotalInDecade = 0;
+                for(Text value : values){
+                    String[] valueTokens = value.toString().split(",");
+                    npmiTotalInDecade += Double.parseDouble(valueTokens[NPMI_VALUE_INDEX]);
+                    context.write(key, value);
+                }
+
+                Path filePath = new Path(folderPath, key.toString());
+                OutputStream s = fs.create(filePath);
+                s.write(String.valueOf(npmiTotalInDecade).getBytes());
+                s.close();
+            } catch(IOException ignored){}
         }
     }
 

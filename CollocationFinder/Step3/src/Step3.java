@@ -41,32 +41,34 @@ public class Step3 {
 
         @Override
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
-            String[] values = value.toString().split("\\s+");
-            String decade = values[0];
+            try{
+                String[] values = value.toString().split("\\s+");
+                String decade = values[0];
 
-            Path folderPath = new Path("hdfs:///step3/");
-            Path filePath = new Path(folderPath, decade);
+                Path folderPath = new Path("hdfs:///step3/");
+                Path filePath = new Path(folderPath, decade);
 
-            double npmiTotalInDecade = 0;
-            if(cache.contains(decade)){
-                npmiTotalInDecade = cache.get(decade);
-            } else {
-                try (BufferedInputStream reader = new BufferedInputStream(fs.open(filePath))) {
-                    npmiTotalInDecade = Double.parseDouble(new String(reader.readAllBytes()));
+                double npmiTotalInDecade = 0;
+                if(cache.contains(decade)){
+                    npmiTotalInDecade = cache.get(decade);
+                } else {
+                    try (BufferedInputStream reader = new BufferedInputStream(fs.open(filePath))) {
+                        npmiTotalInDecade = Double.parseDouble(new String(reader.readAllBytes()));
+                    }
+                    cache.put(decade, npmiTotalInDecade);
                 }
-                cache.put(decade, npmiTotalInDecade);
-            }
 
-            String[] valueTokens = value.toString().split(",");
-            double npmi = Double.parseDouble(valueTokens[VALUE_NPMI_INDEX]);
-            double relNpmi = npmi / npmiTotalInDecade;
+                String[] valueTokens = value.toString().split(",");
+                double npmi = Double.parseDouble(valueTokens[VALUE_NPMI_INDEX]);
+                double relNpmi = npmi / npmiTotalInDecade;
 
-            if (relNpmi < relMinPmi) {
-                return;
-            }
+                if (relNpmi < relMinPmi) {
+                    return;
+                }
 
-            outKey.set("%s %s".formatted(values[0], values[1].replace(",", " ")));
-            context.write(outKey, outValue);
+                outKey.set("%s %s".formatted(values[0], values[1].replace(",", " ")));
+                context.write(outKey, outValue);
+            } catch (IOException ignored){}
         }
     }
     public static class DescendingComparator extends WritableComparator {

@@ -23,11 +23,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="38712fba-5bfc-473f-a93a-bf4185f68234" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/artifacts/Step4_jar.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/artifacts/Step1_jar.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/artifacts/Step1_jar.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/artifacts/Step2_jar.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/artifacts/Step2_jar.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/artifacts/Step3_jar.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/artifacts/Step3_jar.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/artifacts/main_jar.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Main/src/CollocationFinder.java" beforeDir="false" afterPath="$PROJECT_DIR$/Main/src/CollocationFinder.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Step1/src/Step1.java" beforeDir="false" afterPath="$PROJECT_DIR$/Step1/src/Step1.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/simulation/src/emrSimulation/EMRSimulator.java" beforeDir="false" afterPath="$PROJECT_DIR$/simulation/src/emrSimulation/EMRSimulator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Step2/src/Step2.java" beforeDir="false" afterPath="$PROJECT_DIR$/Step2/src/Step2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/META-INF/MANIFEST.MF" beforeDir="false" afterPath="$PROJECT_DIR$/src/META-INF/MANIFEST.MF" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/step3/src/Step3.java" beforeDir="false" afterPath="$PROJECT_DIR$/step3/src/Step3.java" afterDir="false" />
     </list>
     <list id="e1d2580c-fec9-453b-b142-f9bd3ac10412" name="Changes by adidi" comment="" />
     <option name="SHOW_DIALOG" value="false" />
@@ -106,7 +110,7 @@
       <recent name="" />
     </key>
   </component>
-  <component name="RunManager" selected="Application.EMRSimulator">
+  <component name="RunManager" selected="Application.CollocationFinder">
     <configuration name="CollocationFinder" type="Application" factoryName="Application" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="CollocationFinder" />
       <module name="main" />
@@ -196,7 +200,7 @@
       <workItem from="1710231720186" duration="1104000" />
       <workItem from="1710262416925" duration="1082000" />
       <workItem from="1710271331709" duration="1274000" />
-      <workItem from="1710272624028" duration="1860000" />
+      <workItem from="1710272624028" duration="3465000" />
     </task>
     <servers />
   </component>
@@ -232,11 +236,6 @@
           <url>file://$PROJECT_DIR$/simulation/src/emrSimulation/EMRSimulator.java</url>
           <line>190</line>
           <option name="timeStamp" value="43" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/step1/src/Step1.java</url>
-          <line>67</line>
-          <option name="timeStamp" value="59" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
