@@ -24,7 +24,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="38712fba-5bfc-473f-a93a-bf4185f68234" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/stepUtils/src/DoublyLinkedList.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stepUtils/src/LRUCache.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stepUtils/src/Pair.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/step1/src/Step1.java" beforeDir="false" afterPath="$PROJECT_DIR$/step1/src/Step1.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/step2/src/Step2.java" beforeDir="false" afterPath="$PROJECT_DIR$/step2/src/Step2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/step3/src/Step3.java" beforeDir="false" afterPath="$PROJECT_DIR$/step3/src/Step3.java" afterDir="false" />
     </list>
     <list id="e1d2580c-fec9-453b-b142-f9bd3ac10412" name="Changes by adidi" comment="" />
     <option name="SHOW_DIALOG" value="false" />
@@ -41,6 +48,9 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 3
@@ -67,7 +77,7 @@
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "git-widget-placeholder": "reworking__step2",
+    "git-widget-placeholder": "main",
     "ignore.virus.scanning.warn.message": "true",
     "jdk.selected.JAVA_MODULE": "corretto-17",
     "kotlin-language-version-configured": "true",
@@ -90,11 +100,11 @@
       <recent name="C:\Users\Yuval\git\Distributed_systems_assignment_2\CollocationFinder\out\production" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\Yuval\git\Distributed_systems_assignment_2\CollocationFinder" />
       <recent name="C:\Users\Yuval\git\Distributed_systems_assignment_2\CollocationFinder\out\production" />
       <recent name="C:\Users\Yuval\git\Distributed_systems_assignment_2\CollocationFinder\out\artifacts" />
       <recent name="C:\Users\Yuval\git\Distributed_systems_assignment_2\CollocationFinder\Job4\src" />
       <recent name="C:\Users\Yuval\git\Distributed_systems_assignment_2\CollocationFinder\Job3\src" />
-      <recent name="C:\Users\Yuval\git\Distributed_systems_assignment_2\CollocationFinder\Job2\src" />
     </key>
     <key name="CopyClassDialog.RECENTS_KEY">
       <recent name="" />
@@ -104,7 +114,7 @@
     <configuration name="CollocationFinder" type="Application" factoryName="Application" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="CollocationFinder" />
       <module name="main" />
-      <option name="PROGRAM_PARAMETERS" value="-minpmi 0 -relminpmi 0 -inputurl s3://distributed-systems-2024-bucket-yuval-adi/hadoop/inputs/small" />
+      <option name="PROGRAM_PARAMETERS" value="-minpmi 0.5 -relminpmi 0.2 -inputurl s3://distributed-systems-2024-bucket-yuval-adi/hadoop/inputs/small_2gram_hebrew" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -124,11 +134,11 @@
       </method>
     </configuration>
     <configuration name="LRUCache" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="utils.LRUCache" />
-      <module name="main" />
+      <option name="MAIN_CLASS_NAME" value="LRUCache" />
+      <module name="stepUtils" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="utils.*" />
+          <option name="PATTERN" value=".*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -215,22 +225,12 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/simulation/src/emrSimulation/EMRSimulator.java</url>
-          <line>49</line>
-          <option name="timeStamp" value="22" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/simulation/src/emrSimulation/EMRSimulator.java</url>
-          <line>286</line>
-          <option name="timeStamp" value="34" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/Main/src/utils/LRUCache.java</url>
+          <url>file://$PROJECT_DIR$/stepUtils/src/LRUCache.java</url>
           <line>65</line>
           <option name="timeStamp" value="38" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/Main/src/utils/DoublyLinkedList.java</url>
+          <url>file://$PROJECT_DIR$/stepUtils/src/DoublyLinkedList.java</url>
           <line>58</line>
           <option name="timeStamp" value="39" />
         </line-breakpoint>

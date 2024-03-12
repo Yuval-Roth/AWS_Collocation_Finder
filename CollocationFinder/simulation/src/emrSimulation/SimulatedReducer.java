@@ -2,16 +2,16 @@ package emrSimulation;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.RawComparator;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapreduce.*;
 import org.apache.hadoop.security.Credentials;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 public abstract class SimulatedReducer<KI,VI,KO,VO> extends Reducer<KI, VI, KO, VO> {
 

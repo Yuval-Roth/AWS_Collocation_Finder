@@ -10,14 +10,17 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import utils.DecadesPartitioner;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.*;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
 
 
 public class Step1 {
@@ -27,13 +30,12 @@ public class Step1 {
 
     /**
      * emits the following format:
-     *
      *  decade,w1,w2 -> count_overall
      *  decade,w1,_ -> count_overall
      *  decade,_,w2 -> count_overall
      *  decade,_,_ -> count_overall
      */
-    public static class TokenizerMapper extends Mapper<LongWritable, Text, Text, LongWritable> {
+    public static class Step1Mapper extends Mapper<LongWritable, Text, Text, LongWritable> {
 
         private static final String BUCKET_NAME = "distributed-systems-2024-bucket-yuval-adi";
         private static final int W1_INDEX = 0;
@@ -190,6 +192,13 @@ public class Step1 {
         }
     }
 
+    public static class Step1Partitioner extends Partitioner<Text, LongWritable> {
+        public int getPartition(Text key, LongWritable value, int numPartitions) {
+            String[] keyTokens = key.toString().split(",");
+            return Integer.parseInt(String.valueOf(keyTokens[0].charAt(2))) % numPartitions;
+        }
+    }
+
     public static void main(String[] args){
         System.out.println("[DEBUG] STEP 1 started!");
         readArgs(args);
@@ -201,8 +210,8 @@ public class Step1 {
         try {
             Job job = Job.getInstance(conf, "Step1");
             job.setJarByClass(Step1.class);
-            job.setMapperClass(TokenizerMapper.class);
-            job.setPartitionerClass(DecadesPartitioner.class);
+            job.setMapperClass(Step1Mapper.class);
+            job.setPartitionerClass(Step1Partitioner.class);
             job.setReducerClass(Step1Reducer.class);
             job.setCombinerClass(Step1Combiner.class);
             job.setMapOutputKeyClass(Text.class);

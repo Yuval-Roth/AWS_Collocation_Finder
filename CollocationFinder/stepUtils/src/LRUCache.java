@@ -1,14 +1,9 @@
-package utils;
-
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.hadoop.security.SaslOutputStream;
-import utils.DoublyLinkedList.Node;
-
 public class LRUCache<K,V> {
 
-    private final Map<K,Pair<V,Node<K>>> mainMemory;
+    private final Map<K,Pair<V, DoublyLinkedList.Node<K>>> mainMemory;
     private final DoublyLinkedList<K> lruQueue;
     private final int maxCapacity;
     private int size;
@@ -27,7 +22,7 @@ public class LRUCache<K,V> {
             mainMemory.remove(node.data);
             size--;
         }
-        Node<K> node = lruQueue.add(key);
+        DoublyLinkedList.Node<K> node = lruQueue.add(key);
         size++;
         mainMemory.put(key,new Pair<>(value,node));
     }
@@ -36,9 +31,9 @@ public class LRUCache<K,V> {
         if(mostRecentlyUsed != null && mostRecentlyUsed.key.equals(key)){
             return mostRecentlyUsed.value;
         }
-        Pair<V, Node<K>> entry;
+        Pair<V, DoublyLinkedList.Node<K>> entry;
         if((entry = mainMemory.get(key)) != null){
-            Node<K> node = entry.value;
+            DoublyLinkedList.Node<K> node = entry.value;
             lruQueue.remove(node);
             lruQueue.add(node);
             V toReturn = entry.key;
@@ -50,23 +45,5 @@ public class LRUCache<K,V> {
 
     public boolean contains(K key){
         return get(key) != null;
-    }
-
-    public static void main(String[] args){
-        // Create a new LRUCache object with a capacity of 2
-        LRUCache<Integer, String> cache = new LRUCache<>(2);
-
-        // Add a large number of elements to the cache
-        for (int i = 0; i < 10000; i++) {
-            cache.put(i, "Value " + i);
-        }
-
-        // Try to retrieve an element that should be in the cache
-        String value9999 = cache.get(9999);
-        System.out.println("Value at key 9999: " + value9999);
-
-        // Try to retrieve an element that should have been evicted from the cache
-        String value0 = cache.get(0);
-        System.out.println("Value at key 0: " + value0);
     }
 }

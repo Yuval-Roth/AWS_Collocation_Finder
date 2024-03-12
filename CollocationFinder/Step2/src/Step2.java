@@ -1,16 +1,14 @@
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import utils.DecadesPartitioner;
-import utils.LRUCache;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -24,7 +22,7 @@ public class Step2 {
     private static Path _outputPath;
     private static Double _minPmi;
 
-    public static class C_W_Mapper extends Mapper<LongWritable, Text, Text, Text> {
+    public static class Step2Mapper extends Mapper<LongWritable, Text, Text, Text> {
 
         private static final int CACHE_SIZE = 10000;
         // <KEY INDEXES>
@@ -128,9 +126,15 @@ public class Step2 {
             s.write(String.valueOf(npmiTotalInDecade).getBytes());
             s.close();
         }
-
-
     }
+
+    public static class Step2Partitioner extends Partitioner<Text, Text> {
+        public int getPartition(Text key, Text value, int numPartitions) {
+            String[] keyTokens = key.toString().split(",");
+            return Integer.parseInt(String.valueOf(keyTokens[0].charAt(2))) % numPartitions;
+        }
+    }
+
     public static void main(String[] args){
         System.out.println("[DEBUG] STEP 2 started!");
         readArgs(args);
@@ -142,8 +146,8 @@ public class Step2 {
         try {
             Job job = Job.getInstance(conf, "Step2");
             job.setJarByClass(Step2.class);
-            job.setMapperClass(C_W_Mapper.class);
-            job.setPartitionerClass(DecadesPartitioner.class);
+            job.setMapperClass(Step2Mapper.class);
+            job.setPartitionerClass(Step2Partitioner.class);
             job.setReducerClass(Step2Reducer.class);
             job.setMapOutputKeyClass(Text.class);
             job.setMapOutputValueClass(Text.class);

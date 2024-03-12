@@ -1,7 +1,3 @@
-package utils;
-
-
-
 public class DoublyLinkedList<T> {
     private Node<T> first;
     private Node<T> last;

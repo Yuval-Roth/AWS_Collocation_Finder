@@ -1,13 +1,14 @@
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.*;
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.WritableComparable;
+import org.apache.hadoop.io.WritableComparator;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import utils.DecadesPartitioner;
-import utils.LRUCache;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -20,7 +21,7 @@ public class Step3 {
     private static Path _outputPath;
     private static Double _relMinPmi;
 
-    public static class RelNPMIMapper extends Mapper<LongWritable, Text, Text, Text> {
+    public static class Step3Mapper extends Mapper<LongWritable, Text, Text, Text> {
         private static final int VALUE_NPMI_INDEX = 2;
         private static final int CACHE_SIZE = 100;
         private Text outKey;
@@ -110,8 +111,7 @@ public class Step3 {
         try {
             Job job = Job.getInstance(conf, "Step4");
             job.setJarByClass(Step3.class);
-            job.setMapperClass(RelNPMIMapper.class);
-            job.setPartitionerClass(DecadesPartitioner.class);
+            job.setMapperClass(Step3Mapper.class);
             job.setMapOutputKeyClass(Text.class);
             job.setMapOutputValueClass(Text.class);
             job.setOutputKeyClass(Text.class);
