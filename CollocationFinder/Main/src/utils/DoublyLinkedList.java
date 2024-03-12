@@ -16,7 +16,6 @@ public class DoublyLinkedList<T> {
         Node<T> newNode = new Node<>(data);
         if (first == null) {
             first = newNode;
-
         } else {
             last.next = newNode;
             newNode.prev = last;
@@ -24,6 +23,18 @@ public class DoublyLinkedList<T> {
         last = newNode;
         return newNode;
     }
+
+    public Node<T> add(Node<T> newNode) {
+        if (first == null) {
+            first = newNode;
+        } else {
+            last.next = newNode;
+            newNode.prev = last;
+        }
+        last = newNode;
+        return newNode;
+    }
+
 
     public Node<T> pop() {
         if (first == null) {
@@ -38,17 +49,23 @@ public class DoublyLinkedList<T> {
     }
 
     public void remove(Node<T> node) {
-        if (node == null) {
-            return;
-        } else if (node == first) {
-            first = node.next;
-        } else if (node == last) {
-            last = node.prev;
-        } else {
-            node.prev.next = node.next;
-            node.next.prev = node.prev;
-        }
+    if (node == null) {
+        return;
     }
+    if(node == first && node == last){
+        first = null;
+        last = null;
+    } else if (node == first) {
+        first = node.next;
+        first.prev = null;
+    } else if (node == last) {
+        last = node.prev;
+        last.next = null;
+    } else {
+        node.prev.next = node.next;
+        node.next.prev = node.prev;
+    }
+}
 
     public static class Node<T> {
         public T data;
