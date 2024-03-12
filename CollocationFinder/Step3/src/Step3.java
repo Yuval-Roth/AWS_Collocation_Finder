@@ -12,6 +12,8 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import utils.DecadesPartitioner;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -75,7 +77,9 @@ public class Step3 {
             }
 
             Path filePath = new Path(folderPath, key.toString());
-            fs.create(filePath).writeUTF(String.valueOf(npmiTotal));
+            OutputStream s = fs.create(filePath);
+            s.write(String.valueOf(npmiTotal).getBytes());
+            s.close();
         }
     }
 

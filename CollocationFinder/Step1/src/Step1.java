@@ -16,6 +16,7 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import utils.DecadesPartitioner;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.*;
 
 
@@ -170,7 +171,9 @@ public class Step1 {
                     filePath = new Path(folderPath, "%s-_-%s".formatted(decade,w2));
                 }
 
-                fs.create(filePath).writeUTF(String.valueOf(counter));
+                OutputStream s = fs.create(filePath);
+                s.write(String.valueOf(counter).getBytes());
+                s.close();
             }
         }
     }
