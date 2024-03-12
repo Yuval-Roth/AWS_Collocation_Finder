@@ -50,23 +50,22 @@ public class Step1 {
         @Override
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
             String[] tokens = value.toString().split("\\s+");
-
+            
             // remove tags from words if they exist
             int index;
             if ((index = tokens[W1_INDEX].indexOf("_")) != -1){
-                tokens[W1_INDEX] = tokens[W1_INDEX].substring(0,index);
+                tokens[W1_INDEX] = tokens[W1_INDEX].substring(0,index).trim();
             }
             if ((index = tokens[W2_INDEX].indexOf("_")) != -1){
-                tokens[W2_INDEX] = tokens[W2_INDEX].substring(0,index);
-            }
-            if(tokens[W1_INDEX].isEmpty() || tokens[W2_INDEX].isEmpty()){
-                return;
+                tokens[W2_INDEX] = tokens[W2_INDEX].substring(0,index).trim();
             }
 
-            // skip stop words
-            if (stopWords.contains(tokens[W1_INDEX]) || stopWords.contains(tokens[W2_INDEX])) {
-                return;
-            }
+            // skip bad input
+            if (tokens[W1_INDEX].isEmpty() ||
+                tokens[W2_INDEX].isEmpty() ||
+                isMalformedInput(tokens) ||
+                stopWords.contains(tokens[W1_INDEX]) ||
+                stopWords.contains(tokens[W2_INDEX])) {return;}
 
             String decade = tokens[DECADE_INDEX];
             decade = decade.substring(0, decade.length() - 1) + "0";
@@ -82,7 +81,27 @@ public class Step1 {
             context.write(outKey, outValue);
             outKey.set("%s,_,_".formatted(decade));
             context.write(outKey, outValue);
+        }
 
+        private static boolean isMalformedInput(String[] tokens) {
+            String chars = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZzקראטוןםפשדגכעיחלךףזסבהנמצתץ";
+            String numbers = "0123456789";
+
+            return tokens.length < 4 ||
+                    isInvalid(tokens[DECADE_INDEX],numbers) ||
+                    isInvalid(tokens[COUNT_OVERALL_INDEX],numbers) ||
+                    isInvalid(tokens[W1_INDEX],chars) ||
+                    isInvalid(tokens[W2_INDEX],chars);
+        }
+
+        private static boolean isInvalid(String w,String chars) {
+            char[] _w = w.toCharArray();
+            for (int i = 0; i < w.length(); i++) {
+                if(chars.indexOf(_w[i]) == -1){
+                    return true;
+                }
+            }
+            return false;
         }
 
         @Override
@@ -182,7 +201,7 @@ public class Step1 {
         }
 
         @Override
-        protected void reduce(Text key, Iterable<LongWritable> values, Reducer<Text, LongWritable, Text, LongWritable>.Context context) throws IOException, InterruptedException {
+        protected void reduce(Text key, Iterable<LongWritable> values, Context context) throws IOException, InterruptedException {
             long counter = 0;
             for (LongWritable value : values) {
                 counter += value.get();

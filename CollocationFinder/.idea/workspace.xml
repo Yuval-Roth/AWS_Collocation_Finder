@@ -6,7 +6,6 @@
       <artifact name="step1:jar" />
       <artifact name="step2:jar" />
       <artifact name="step3:jar" />
-      <artifact name="step4:jar" />
     </artifacts-to-build>
   </component>
   <component name="AutoImportSettings">
@@ -24,14 +23,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="38712fba-5bfc-473f-a93a-bf4185f68234" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/stepUtils/src/DoublyLinkedList.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stepUtils/src/LRUCache.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/stepUtils/src/Pair.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/artifacts/Step4_jar.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/step1/src/Step1.java" beforeDir="false" afterPath="$PROJECT_DIR$/step1/src/Step1.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/step2/src/Step2.java" beforeDir="false" afterPath="$PROJECT_DIR$/step2/src/Step2.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/step3/src/Step3.java" beforeDir="false" afterPath="$PROJECT_DIR$/step3/src/Step3.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Main/src/CollocationFinder.java" beforeDir="false" afterPath="$PROJECT_DIR$/Main/src/CollocationFinder.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Step1/src/Step1.java" beforeDir="false" afterPath="$PROJECT_DIR$/Step1/src/Step1.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/simulation/src/emrSimulation/EMRSimulator.java" beforeDir="false" afterPath="$PROJECT_DIR$/simulation/src/emrSimulation/EMRSimulator.java" afterDir="false" />
     </list>
     <list id="e1d2580c-fec9-453b-b142-f9bd3ac10412" name="Changes by adidi" comment="" />
     <option name="SHOW_DIALOG" value="false" />
@@ -66,7 +62,7 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "Application.CollocationFinder.executor": "Run",
-    "Application.EMRSimulator.executor": "Debug",
+    "Application.EMRSimulator.executor": "Run",
     "Application.LRUCache.executor": "Run",
     "Application.Step1.executor": "Run",
     "Application.Step2.executor": "Debug",
@@ -110,7 +106,7 @@
       <recent name="" />
     </key>
   </component>
-  <component name="RunManager" selected="Application.CollocationFinder">
+  <component name="RunManager" selected="Application.EMRSimulator">
     <configuration name="CollocationFinder" type="Application" factoryName="Application" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="CollocationFinder" />
       <module name="main" />
@@ -122,7 +118,7 @@
     <configuration name="EMRSimulator" type="Application" factoryName="Application" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="emrSimulation.EMRSimulator" />
       <module name="simulation" />
-      <option name="PROGRAM_PARAMETERS" value="C:\Users\Yuval\Desktop\small" />
+      <option name="PROGRAM_PARAMETERS" value="C:\Users\Yuval\Desktop\small_2gram_hebrew" />
       <extension name="coverage">
         <pattern>
           <option name="PATTERN" value="emrSimulation.*" />
@@ -199,6 +195,8 @@
       <workItem from="1710195701686" duration="4845000" />
       <workItem from="1710231720186" duration="1104000" />
       <workItem from="1710262416925" duration="1082000" />
+      <workItem from="1710271331709" duration="1274000" />
+      <workItem from="1710272624028" duration="1860000" />
     </task>
     <servers />
   </component>
@@ -225,14 +223,20 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/stepUtils/src/LRUCache.java</url>
-          <line>65</line>
-          <option name="timeStamp" value="38" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/stepUtils/src/DoublyLinkedList.java</url>
           <line>58</line>
           <option name="timeStamp" value="39" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <condition expression="keyTokens.length != 3" language="JAVA" />
+          <url>file://$PROJECT_DIR$/simulation/src/emrSimulation/EMRSimulator.java</url>
+          <line>190</line>
+          <option name="timeStamp" value="43" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/step1/src/Step1.java</url>
+          <line>67</line>
+          <option name="timeStamp" value="59" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

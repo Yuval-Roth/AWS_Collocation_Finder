@@ -18,7 +18,7 @@ public class CollocationFinder {
     // </S3>
 
     // <APPLICATION DATA>
-    private static final int INSTANCE_COUNT = 1;
+    private static final int INSTANCE_COUNT = 9;
     public static final String HADOOP_JARS_URL = BUCKET_URL + "hadoop/jars/";
     public static final String HADOOP_OUTPUTS_URL = BUCKET_URL + "hadoop/outputs/";
     public static final String JAR_STEP_ARGS = "%s -inputUrl %s -outputUrl %s";

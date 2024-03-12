@@ -15,6 +15,7 @@ import org.apache.hadoop.io.Text;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.*;
 
 public class EMRSimulator {
@@ -36,17 +37,17 @@ public class EMRSimulator {
             Step1Reducer step1Reducer = new Step1Reducer(step1Mapper.getOutput(),conf);
             step1Reducer.run();
             String step1Output = step1Reducer.getOutput();
-
+            System.out.println(step1Output);
             // Step 2
-            input = makeMapperInput(step1Output);
-            conf = new Configuration();
-            conf.set("minPmi", "0");
-            Step2Mapper step2Mapper = new Step2Mapper(input,conf);
-            step2Mapper.run();
-            Step2Reducer step2Reducer = new Step2Reducer(step2Mapper.getOutput(),conf);
-            step2Reducer.run();
-            String step2Output = step2Reducer.getOutput();
-            System.out.println(step2Output);
+//            input = makeMapperInput(step1Output);
+//            conf = new Configuration();
+//            conf.set("minPmi", "0");
+//            Step2Mapper step2Mapper = new Step2Mapper(input,conf);
+//            step2Mapper.run();
+//            Step2Reducer step2Reducer = new Step2Reducer(step2Mapper.getOutput(),conf);
+//            step2Reducer.run();
+//            String step2Output = step2Reducer.getOutput();
+//            System.out.println(step2Output);
 
         } catch (Exception e){
             e.printStackTrace();
@@ -66,8 +67,8 @@ public class EMRSimulator {
         private static final int COUNT_OVERALL_INDEX = 3;
         private Set<String> stopWords;
         private AmazonS3 s3;
-        private Text outKey;
         private LongWritable outValue;
+        private Text outKey;
 
         @Override
         protected void map(Long key, String value, Context context) throws IOException, InterruptedException {
@@ -76,24 +77,32 @@ public class EMRSimulator {
             // remove tags from words if they exist
             int index;
             if ((index = tokens[W1_INDEX].indexOf("_")) != -1){
-                tokens[W1_INDEX] = tokens[W1_INDEX].substring(0,index);
+                tokens[W1_INDEX] = tokens[W1_INDEX].substring(0,index).trim();
             }
             if ((index = tokens[W2_INDEX].indexOf("_")) != -1){
-                tokens[W2_INDEX] = tokens[W2_INDEX].substring(0,index);
+                tokens[W2_INDEX] = tokens[W2_INDEX].substring(0,index).trim();
             }
             if(tokens[W1_INDEX].isEmpty() || tokens[W2_INDEX].isEmpty()){
                 return;
             }
 
-            // skip stop words
-            if (stopWords.contains(tokens[W1_INDEX]) || stopWords.contains(tokens[W2_INDEX])) {
+            if (isBadInput(tokens))
                 return;
-            }
 
             String decade = tokens[DECADE_INDEX];
             decade = decade.substring(0, decade.length() - 1) + "0";
             String w1 = tokens[W1_INDEX];
             String w2 = tokens[W2_INDEX];
+
+//            outValue.set(Long.parseLong(tokens[COUNT_OVERALL_INDEX]));
+//            outKey.set("%s,%s,%s".formatted(decade,w1,w2));
+//            context.write(outKey, outValue);
+//            outKey.set("%s,%s,_".formatted(decade,w1));
+//            context.write(outKey, outValue);
+//            outKey.set("%s,_,%s".formatted(decade,w2));
+//            context.write(outKey, outValue);
+//            outKey.set("%s,_,_".formatted(decade));
+//            context.write(outKey, outValue);
 
             long outValue = Long.parseLong(tokens[COUNT_OVERALL_INDEX]);
             String outKey = "%s,%s,%s".formatted(decade,w1,w2);
@@ -104,6 +113,28 @@ public class EMRSimulator {
             context.write(outKey,outValue);
             outKey = "%s,_,_".formatted(decade);
             context.write(outKey,outValue);
+        }
+
+        private static boolean isBadInput(String[] tokens) {
+            String chars = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZzקראטוןםפשדגכעיחלךףזסבהנמצתץ";
+            String numbers = "0123456789";
+
+            return tokens.length < 4 ||
+                    isInvalid(tokens[DECADE_INDEX],numbers) ||
+                    isInvalid(tokens[COUNT_OVERALL_INDEX],numbers) ||
+                    isInvalid(tokens[W1_INDEX],chars) ||
+                    isInvalid(tokens[W2_INDEX],chars);
+
+        }
+
+        private static boolean isInvalid(String w,String chars) {
+            char[] _w = w.toCharArray();
+            for (int i = 0; i < w.length(); i++) {
+                if(chars.indexOf(_w[i]) == -1){
+                    return true;
+                }
+            }
+            return false;
         }
 
         @Override
@@ -186,8 +217,10 @@ public class EMRSimulator {
                     filePath = new Path(folderPath, "%s-_-%s".formatted(decade,w2));
                 }
 
-//                fs.create(filePath).writeUTF(String.valueOf(counter));
-                sfs.put(filePath.toString(), String.valueOf(counter));
+                sfs.put(filePath.toString(),String.valueOf(counter));
+//                OutputStream s = fs.create(filePath);
+//                s.write(String.valueOf(counter).getBytes());
+//                s.close();
             }
         }
     }
