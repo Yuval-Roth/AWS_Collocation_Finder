@@ -98,11 +98,16 @@ public class Step2 {
         protected void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
             for(Text value : values){
                 String[] valueTokens = value.toString().split(",");
-                double countOverAll = Double.parseDouble(valueTokens[COUNT_OVERALL_VALUE_INDEX]);
-                double bigramCountInDecade = Double.parseDouble(valueTokens[BIGRAM_COUNT_IN_DECADE_INDEX]);
-                double w1CountInDecade = Double.parseDouble(valueTokens[W1_COUNT_IN_DECADE_INDEX]);
-                double w2CountInDecade = Double.parseDouble(valueTokens[W2_COUNT_IN_DECADE_INDEX]);
-                double npmi = calculateNPMI(countOverAll, bigramCountInDecade, w1CountInDecade, w2CountInDecade);
+                Double[] doubleTokens = Arrays.stream(valueTokens)
+                        .map(Double::parseDouble)
+                        .toArray(Double[]::new);
+
+                double npmi = calculateNPMI(
+                        doubleTokens[COUNT_OVERALL_VALUE_INDEX],
+                        doubleTokens[BIGRAM_COUNT_IN_DECADE_INDEX],
+                        doubleTokens[W1_COUNT_IN_DECADE_INDEX],
+                        doubleTokens[W2_COUNT_IN_DECADE_INDEX]);
+
                 if(npmi < minPmi){
                     continue;
                 }

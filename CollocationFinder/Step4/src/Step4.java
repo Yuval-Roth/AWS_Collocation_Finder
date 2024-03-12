@@ -82,10 +82,10 @@ public class Step4 {
                     continue;
                 }
 
-                outKey.set("%s,%s,%s,%s".formatted(key.toString(),
-                        npmi,
+                outKey.set("%s %s %s %s".formatted(key.toString(),
                         valueTokens[W1_VALUE_INDEX],
-                        valueTokens[W2_VALUE_INDEX]));
+                        valueTokens[W2_VALUE_INDEX],
+                        npmi));
                 context.write(outKey, outValue);
             }
         }

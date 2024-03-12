@@ -43,16 +43,12 @@ public class Step1 {
         private Set<String> stopWords;
         private AmazonS3 s3;
         private LongWritable outValue;
-        private Text outKeyBoth;
-        private Text outKeyW1;
-        private Text outKeyW2;
-        private Text outKeyNone;
+        private Text outKey;
 
         @Override
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
             String[] tokens = value.toString().split("\\s+");
 
-            boolean skipLine = false;
             // remove tags from words if they exist
             int index;
             if ((index = tokens[W1_INDEX].indexOf("_")) != -1){
@@ -62,38 +58,34 @@ public class Step1 {
                 tokens[W2_INDEX] = tokens[W2_INDEX].substring(0,index);
             }
             if(tokens[W1_INDEX].isEmpty() || tokens[W2_INDEX].isEmpty()){
-                skipLine = true;
+                return;
             }
 
             // skip stop words
             if (stopWords.contains(tokens[W1_INDEX]) || stopWords.contains(tokens[W2_INDEX])) {
-                skipLine = true;
+                return;
             }
 
-            if(! skipLine){
-                String decade = tokens[DECADE_INDEX];
-                decade = decade.substring(0, decade.length() - 1) + "0";
-                String w1 = tokens[W1_INDEX];
-                String w2 = tokens[W2_INDEX];
+            String decade = tokens[DECADE_INDEX];
+            decade = decade.substring(0, decade.length() - 1) + "0";
+            String w1 = tokens[W1_INDEX];
+            String w2 = tokens[W2_INDEX];
 
-                outKeyBoth.set("%s,%s,%s".formatted(decade,w1,w2));
-                outKeyW1.set("%s,%s,_".formatted(decade,w1));
-                outKeyW2.set("%s,_,%s".formatted(decade,w2));
-                outKeyNone.set("%s,_,_".formatted(decade));
-                outValue.set(Long.parseLong(tokens[COUNT_OVERALL_INDEX]));
-                context.write(outKeyBoth, outValue);
-                context.write(outKeyW1, outValue);
-                context.write(outKeyW2, outValue);
-                context.write(outKeyNone, outValue);
-            }
+            outValue.set(Long.parseLong(tokens[COUNT_OVERALL_INDEX]));
+            outKey.set("%s,%s,%s".formatted(decade,w1,w2));
+            context.write(outKey, outValue);
+            outKey.set("%s,%s,_".formatted(decade,w1));
+            context.write(outKey, outValue);
+            outKey.set("%s,_,%s".formatted(decade,w2));
+            context.write(outKey, outValue);
+            outKey.set("%s,_,_".formatted(decade));
+            context.write(outKey, outValue);
+
         }
 
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
-            outKeyBoth = new Text();
-            outKeyW1 = new Text();
-            outKeyW2 = new Text();
-            outKeyNone = new Text();
+            outKey = new Text();
             outValue = new LongWritable();
             String stopWordsFile = context.getConfiguration().get("stopWordsFile");
             s3 = AmazonS3Client.builder().withRegion(Regions.US_WEST_2).build();
