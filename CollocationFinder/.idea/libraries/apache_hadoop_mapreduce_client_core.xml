@@ -89,6 +89,8 @@
       <root url="jar://$MAVEN_REPOSITORY$/io/netty/netty/3.10.6.Final/netty-3.10.6.Final.jar!/" />
     </CLASSES>
     <JAVADOC />
-    <SOURCES />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.ideaLibSources/hadoop-mapreduce-client-core-3.3.6-sources.jar!/" />
+    </SOURCES>
   </library>
 </component>

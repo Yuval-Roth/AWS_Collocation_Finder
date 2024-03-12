@@ -15,13 +15,21 @@
   <component name="ChangeListManager">
     <list default="true" id="38712fba-5bfc-473f-a93a-bf4185f68234" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/step1/src/Step1.java" beforeDir="false" afterPath="$PROJECT_DIR$/step1/src/Step1.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Step4/src/Step4.java" beforeDir="false" afterPath="$PROJECT_DIR$/Step4/src/Step4.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/step3/src/Step3.java" beforeDir="false" afterPath="$PROJECT_DIR$/step3/src/Step3.java" afterDir="false" />
     </list>
     <list id="e1d2580c-fec9-453b-b142-f9bd3ac10412" name="Changes by adidi" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
@@ -155,6 +163,7 @@
       <workItem from="1709812215511" duration="5079000" />
       <workItem from="1710014724964" duration="20614000" />
       <workItem from="1710195701686" duration="4845000" />
+      <workItem from="1710231720186" duration="1104000" />
     </task>
     <servers />
   </component>

@@ -1,20 +1,16 @@
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.DoubleWritable;
-import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import utils.DecadesPartitioner;
-import utils.DescendingComparator;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -25,36 +21,11 @@ public class Step4 {
     private static Double _relMinPmi;
 
     public static class RelNPMIMapper extends Mapper<LongWritable, Text, Text, Text> {
-
-        private Text outKey;
-        private Text outValue;
-
-        @Override
-        protected void setup(Context context) throws IOException, InterruptedException {
-            outKey = new Text();
-            outValue = new Text("");
-        }
-
-        @Override
-        protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
-            String[] values = value.toString().split("\\s+");
-
-            outKey.set(values[0]);
-            outValue.set(values[1]);
-            context.write(outKey, outValue);
-        }
-    }
-
-    public static class RelNPMIReducer extends Reducer<Text, Text, Text, Text> {
-
-        private static final int W1_VALUE_INDEX = 0;
-        private static final int W2_VALUE_INDEX = 1;
-        private static final int NPMI_VALUE_INDEX = 2;
-
-        private double relMinPmi;
+        private static final int VALUE_NPMI_INDEX = 2;
         private Text outKey;
         private Text outValue;
         private FileSystem fs;
+        private double relMinPmi;
 
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
@@ -65,28 +36,54 @@ public class Step4 {
         }
 
         @Override
-        protected void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
+        protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+            String[] values = value.toString().split("\\s+");
+
             Path folderPath = new Path("hdfs:///step3/");
             Path filePath = new Path(folderPath, key.toString());
-            double npmiTotal = 0;
-            try(BufferedInputStream reader = new BufferedInputStream(fs.open(filePath))){
-                npmiTotal = Double.parseDouble(new String(reader.readAllBytes()));
+            double npmiTotalInDecade = 0;
+            try (BufferedInputStream reader = new BufferedInputStream(fs.open(filePath))) {
+                npmiTotalInDecade = Double.parseDouble(new String(reader.readAllBytes()));
+            }
+            String[] valueTokens = value.toString().split(",");
+            double npmi = Double.parseDouble(valueTokens[VALUE_NPMI_INDEX]);
+            double relNpmi = npmi / npmiTotalInDecade;
+
+            if (relNpmi < relMinPmi) {
+                return;
             }
 
-            for(Text value: values){
-                String[] valueTokens = value.toString().split(",");
-                double npmi = Double.parseDouble(valueTokens[NPMI_VALUE_INDEX]);
-                double relNpmi = npmi / npmiTotal;
+            outKey.set("%s %s".formatted(values[0], values[1].replace(",", " ")));
+            context.write(outKey, outValue);
+        }
+    }
+    public static class DescendingComparator extends WritableComparator {
 
-                if(relNpmi < relMinPmi){
-                    continue;
-                }
+        private static final int DECADE_INDEX = 0;
+        private static final int W1_INDEX = 1;
+        private static final int W2_INDEX = 2;
+        private static final int NPMI_INDEX = 3;
 
-                outKey.set("%s %s %s %s".formatted(key.toString(),
-                        valueTokens[W1_VALUE_INDEX],
-                        valueTokens[W2_VALUE_INDEX],
-                        npmi));
-                context.write(outKey, outValue);
+        DescendingComparator() {
+            super(Text.class, true);
+        }
+
+        @Override
+        public int compare(WritableComparable a, WritableComparable b) {
+            String[] aTokens = a.toString().split("\\s+");
+            String[] bTokens = b.toString().split("\\s+");
+            int num;
+            if((num = aTokens[DECADE_INDEX].compareTo(bTokens[DECADE_INDEX])) != 0){
+                return num;
+            }
+            else if ((num = aTokens[NPMI_INDEX].compareTo(bTokens[NPMI_INDEX])) != 0){
+                return -1 * num;
+            }
+            else if ((num = aTokens[W1_INDEX].compareTo(bTokens[W1_INDEX])) != 0){
+                return num;
+            }
+            else {
+                return aTokens[W2_INDEX].compareTo(bTokens[W2_INDEX]);
             }
         }
     }
@@ -101,7 +98,6 @@ public class Step4 {
             job.setJarByClass(Step4.class);
             job.setMapperClass(RelNPMIMapper.class);
             job.setPartitionerClass(DecadesPartitioner.class);
-            job.setReducerClass(RelNPMIReducer.class);
             job.setMapOutputKeyClass(Text.class);
             job.setMapOutputValueClass(Text.class);
             job.setOutputKeyClass(Text.class);

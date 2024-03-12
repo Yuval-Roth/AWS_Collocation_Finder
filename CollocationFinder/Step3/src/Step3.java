@@ -42,12 +42,12 @@ public class Step3 {
             String[] values = value.toString().split("\\s+");
 
             String[] keyTokens = values[0].split(",");
-            double pmi = Double.parseDouble(values[1]);
+            double npmi = Double.parseDouble(values[1]);
             String decade = keyTokens[DECADE_KEY_INDEX];
             String w1 = keyTokens[W1_KEY_INDEX];
             String w2 = keyTokens[W2_KEY_INDEX];
             outKey.set(decade);
-            outValue.set("%s,%s,%s".formatted(w1, w2, pmi));
+            outValue.set("%s,%s,%s".formatted(w1, w2, npmi));
             context.write(outKey, outValue);
         }
     }
@@ -68,17 +68,16 @@ public class Step3 {
             Path folderPath = new Path("hdfs:///step3/");
             fs.mkdirs(folderPath);
 
-            double npmiTotal = 0;
+            double npmiTotalInDecade = 0;
             for(Text value : values){
                 String[] valueTokens = value.toString().split(",");
-                double npmi = Double.parseDouble(valueTokens[NPMI_VALUE_INDEX]);
-                npmiTotal += npmi;
+                npmiTotalInDecade += Double.parseDouble(valueTokens[NPMI_VALUE_INDEX]);
                 context.write(key, value);
             }
 
             Path filePath = new Path(folderPath, key.toString());
             OutputStream s = fs.create(filePath);
-            s.write(String.valueOf(npmiTotal).getBytes());
+            s.write(String.valueOf(npmiTotalInDecade).getBytes());
             s.close();
         }
     }
