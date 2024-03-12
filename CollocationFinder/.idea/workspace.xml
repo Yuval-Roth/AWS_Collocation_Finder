@@ -14,11 +14,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="38712fba-5bfc-473f-a93a-bf4185f68234" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/libraries/apache_hadoop_common.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/apache_hadoop_common.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/libraries/apache_hadoop_mapreduce_client_core.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/apache_hadoop_mapreduce_client_core.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Main/src/utils/DoublyLinkedList.java" beforeDir="false" afterPath="$PROJECT_DIR$/Main/src/utils/DoublyLinkedList.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Main/src/utils/LRUCache.java" beforeDir="false" afterPath="$PROJECT_DIR$/Main/src/utils/LRUCache.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/step1/src/Step1.java" beforeDir="false" afterPath="$PROJECT_DIR$/step1/src/Step1.java" afterDir="false" />
     </list>
     <list id="e1d2580c-fec9-453b-b142-f9bd3ac10412" name="Changes by adidi" comment="" />
     <option name="SHOW_DIALOG" value="false" />
@@ -51,7 +48,7 @@
   "keyToString": {
     "Application.CollocationFinder.executor": "Run",
     "Application.EMRSimulator.executor": "Debug",
-    "Application.LRUCache.executor": "Debug",
+    "Application.LRUCache.executor": "Run",
     "Application.Step1.executor": "Run",
     "Application.Step2.executor": "Debug",
     "Downloaded.Files.Path.Enabled": "false",
@@ -182,6 +179,7 @@
       <workItem from="1710014724964" duration="20614000" />
       <workItem from="1710195701686" duration="4845000" />
       <workItem from="1710231720186" duration="1104000" />
+      <workItem from="1710262416925" duration="1082000" />
     </task>
     <servers />
   </component>

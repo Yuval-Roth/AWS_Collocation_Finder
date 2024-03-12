@@ -54,31 +54,19 @@ public class LRUCache<K,V> {
 
     public static void main(String[] args){
         // Create a new LRUCache object with a capacity of 2
-        LRUCache<String, Integer> cache = new LRUCache<>(2);
+        LRUCache<Integer, String> cache = new LRUCache<>(2);
 
-        // Add some key-value pairs to the cache
-        cache.put("one", 1);
-        cache.put("two", 2);
+        // Add a large number of elements to the cache
+        for (int i = 0; i < 10000; i++) {
+            cache.put(i, "Value " + i);
+        }
 
-        // Retrieve the values for the keys added and print them to the console
-        System.out.println("Value for 'one': " + cache.get("one"));
-        System.out.println("Value for 'two': " + cache.get("two"));
+        // Try to retrieve an element that should be in the cache
+        String value9999 = cache.get(9999);
+        System.out.println("Value at key 9999: " + value9999);
 
-        // Check if a certain key exists in the cache and print the result to the console
-        System.out.println("Cache contains 'one': " + cache.contains("one"));
-        System.out.println("Cache contains 'two': " + cache.contains("two"));
-
-        // Add another key-value pair to the cache
-        cache.put("three", 3);
-
-        System.out.println("Cache contains 'one': " + cache.contains("one"));
-        System.out.println("Cache contains 'two': " + cache.contains("two"));
-        System.out.println("Cache contains 'three': " + cache.contains("three"));
-
-        // Try to retrieve the value for the key 'one' and print it to the console
-        System.out.println("Value for 'one' after adding 'three': " + cache.get("one"));
-        System.out.println("Value for 'two' after adding 'three': " + cache.get("two"));
-        System.out.println("Value for 'three' after adding 'three': " + cache.get("three"));
-        cache.get("three");
+        // Try to retrieve an element that should have been evicted from the cache
+        String value0 = cache.get(0);
+        System.out.println("Value at key 0: " + value0);
     }
 }

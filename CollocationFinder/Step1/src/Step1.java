@@ -114,7 +114,7 @@ public class Step1 {
      * emits the following format:
      *    decade,w1,w2 -> w1,w2,count_overall,bigram_count_in_decade
      */
-    public static class BigramsPerDecadeReducer extends Reducer<Text, LongWritable, Text, LongWritable> {
+    public static class Step1Reducer extends Reducer<Text, LongWritable, Text, LongWritable> {
 
         private static final int KEY_DECADE_INDEX = 0;
         private static final int KEY_W1_INDEX = 1;
@@ -170,9 +170,30 @@ public class Step1 {
         }
     }
 
+    public static class Step1Combiner extends Reducer<Text, LongWritable, Text, LongWritable>{
+
+        LongWritable outValue;
+
+        @Override
+        protected void setup(Reducer<Text, LongWritable, Text, LongWritable>.Context context) throws IOException, InterruptedException {
+            outValue = new LongWritable();
+        }
+
+        @Override
+        protected void reduce(Text key, Iterable<LongWritable> values, Reducer<Text, LongWritable, Text, LongWritable>.Context context) throws IOException, InterruptedException {
+            long counter = 0;
+            for (LongWritable value : values) {
+                counter += value.get();
+            }
+            outValue.set(counter);
+            context.write(key,outValue);
+        }
+    }
+
     public static void main(String[] args){
         System.out.println("[DEBUG] STEP 1 started!");
         readArgs(args);
+        System.out.println("[DEBUG] output path: " + _outputPath.toString());
         Configuration conf = new Configuration();
         conf.set("stopWordsFile", _stopWordsFile);
         try {
@@ -180,7 +201,8 @@ public class Step1 {
             job.setJarByClass(Step1.class);
             job.setMapperClass(TokenizerMapper.class);
             job.setPartitionerClass(DecadesPartitioner.class);
-            job.setReducerClass(BigramsPerDecadeReducer.class);
+            job.setReducerClass(Step1Reducer.class);
+            job.setCombinerClass(Step1Combiner.class);
             job.setMapOutputKeyClass(Text.class);
             job.setMapOutputValueClass(LongWritable.class);
             job.setOutputKeyClass(Text.class);
