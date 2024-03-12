@@ -14,9 +14,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="38712fba-5bfc-473f-a93a-bf4185f68234" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/Main/src/utils/LRUCache.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Step4/src/Step4.java" beforeDir="false" afterPath="$PROJECT_DIR$/Step4/src/Step4.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/step3/src/Step3.java" beforeDir="false" afterPath="$PROJECT_DIR$/step3/src/Step3.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Main/src/LRUCache.java" beforeDir="false" />
     </list>
     <list id="e1d2580c-fec9-453b-b142-f9bd3ac10412" name="Changes by adidi" comment="" />
     <option name="SHOW_DIALOG" value="false" />

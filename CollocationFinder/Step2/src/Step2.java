@@ -10,6 +10,7 @@ import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import utils.DecadesPartitioner;
+import utils.LRUCache;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -25,7 +26,7 @@ public class Step2 {
 
     public static class C_W_Mapper extends Mapper<LongWritable, Text, Text, Text> {
 
-
+        private static final int CACHE_SIZE = 10000;
         // <KEY INDEXES>
         private static final int DECADE_KEY_INDEX = 0;
         private static final int W1_KEY_INDEX = 1;
@@ -36,8 +37,11 @@ public class Step2 {
         private Text outKey;
         private Text outValue;
 
+        private LRUCache<String, String> cache;
+
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
+            cache = new LRUCache<>(CACHE_SIZE);
             outKey = new Text();
             outValue = new Text();
             fs = FileSystem.get(context.getConfiguration());
@@ -60,15 +64,34 @@ public class Step2 {
             Path bigramCountPath = new Path(folderPath, "%s-_-_".formatted(decade));
             Path w1CountPath = new Path(folderPath, "%s-%s-_".formatted(decade, w1));
             Path w2CountPath = new Path(folderPath, "%s-_-%s".formatted(decade, w2));
-            try(BufferedInputStream reader = new BufferedInputStream(fs.open(bigramCountPath))){
-                bigramCountInDecade = new String(reader.readAllBytes());
+
+            if(cache.contains(bigramCountPath.toString())){
+                bigramCountInDecade = cache.get(bigramCountPath.toString());
+            } else {
+                try(BufferedInputStream reader = new BufferedInputStream(fs.open(bigramCountPath))){
+                    bigramCountInDecade = new String(reader.readAllBytes());
+                }
+                cache.put(bigramCountPath.toString(), bigramCountInDecade);
             }
-            try(BufferedInputStream reader = new BufferedInputStream(fs.open(w1CountPath))){
-                w1CountInDecade = new String(reader.readAllBytes());
+
+            if(cache.contains(w1CountPath.toString())){
+                w1CountInDecade = cache.get(w1CountPath.toString());
+            } else {
+                try(BufferedInputStream reader = new BufferedInputStream(fs.open(w1CountPath))){
+                    w1CountInDecade = new String(reader.readAllBytes());
+                }
+                cache.put(w1CountPath.toString(), w1CountInDecade);
             }
-            try(BufferedInputStream reader = new BufferedInputStream(fs.open(w2CountPath))){
-                w2CountInDecade = new String(reader.readAllBytes());
+
+            if(cache.contains(w2CountPath.toString())){
+                w2CountInDecade = cache.get(w2CountPath.toString());
+            } else {
+                try(BufferedInputStream reader = new BufferedInputStream(fs.open(w2CountPath))){
+                    w2CountInDecade = new String(reader.readAllBytes());
+                }
+                cache.put(w2CountPath.toString(), w2CountInDecade);
             }
+
             outKey.set(values[0]);
             outValue.set("%s,%s,%s,%s".formatted(countOverall,
                     bigramCountInDecade,w1CountInDecade,w2CountInDecade));

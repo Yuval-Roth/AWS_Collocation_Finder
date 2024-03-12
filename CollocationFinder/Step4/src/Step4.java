@@ -8,6 +8,7 @@ import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import utils.DecadesPartitioner;
+import utils.LRUCache;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -22,13 +23,16 @@ public class Step4 {
 
     public static class RelNPMIMapper extends Mapper<LongWritable, Text, Text, Text> {
         private static final int VALUE_NPMI_INDEX = 2;
+        private static final int CACHE_SIZE = 100;
         private Text outKey;
         private Text outValue;
         private FileSystem fs;
         private double relMinPmi;
+        private LRUCache<String, String> cache;
 
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
+            cache = new LRUCache<>(CACHE_SIZE);
             relMinPmi = Double.parseDouble(context.getConfiguration().get("relMinPmi"));
             outKey = new Text();
             outValue = new Text("");
@@ -38,13 +42,21 @@ public class Step4 {
         @Override
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
             String[] values = value.toString().split("\\s+");
+            String decade = values[0];
 
             Path folderPath = new Path("hdfs:///step3/");
-            Path filePath = new Path(folderPath, key.toString());
+            Path filePath = new Path(folderPath, decade);
             double npmiTotalInDecade = 0;
-            try (BufferedInputStream reader = new BufferedInputStream(fs.open(filePath))) {
-                npmiTotalInDecade = Double.parseDouble(new String(reader.readAllBytes()));
+
+            if(cache.contains(decade)){
+                npmiTotalInDecade = Double.parseDouble(cache.get(decade));
+            } else {
+                try (BufferedInputStream reader = new BufferedInputStream(fs.open(filePath))) {
+                    npmiTotalInDecade = Double.parseDouble(new String(reader.readAllBytes()));
+                }
+                cache.put(decade, String.valueOf(npmiTotalInDecade));
             }
+
             String[] valueTokens = value.toString().split(",");
             double npmi = Double.parseDouble(valueTokens[VALUE_NPMI_INDEX]);
             double relNpmi = npmi / npmiTotalInDecade;
