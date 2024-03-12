@@ -51,8 +51,8 @@ public class CollocationFinder {
         List<StepConfig> stepConfigs = new LinkedList<>();
         String[] firstArg = {
                 "-stopWordsFile "+ STOP_WORDS_FILE,
-                "-minPmi "+minPmi,
-                "-relMinPmi "+relMinPmi
+                "",
+                "-relMinPmi %f -minPmi %f".formatted(relMinPmi, minPmi)
         };
         String output = HADOOP_OUTPUTS_URL + UUID.randomUUID();
         String input = inputUrl;

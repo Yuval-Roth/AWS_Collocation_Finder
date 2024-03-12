@@ -20,7 +20,6 @@ public class Step2 {
 
     private static Path _inputPath;
     private static Path _outputPath;
-    private static Double _minPmi;
 
     public static class Step2Mapper extends Mapper<LongWritable, Text, Text, Text> {
 
@@ -34,7 +33,6 @@ public class Step2 {
         FileSystem fs;
         private Text outKey;
         private Text outValue;
-        private double minPmi;
 
         private LRUCache<String, String> cache;
 
@@ -44,7 +42,6 @@ public class Step2 {
             outKey = new Text();
             outValue = new Text();
             fs = FileSystem.get(context.getConfiguration());
-            minPmi = Double.parseDouble(context.getConfiguration().get("minPmi"));
         }
 
         @Override
@@ -62,24 +59,19 @@ public class Step2 {
             Path w1CountPath = new Path(folderPath, "%s-%s-_".formatted(decade, w1));
             Path w2CountPath = new Path(folderPath, "%s-_-%s".formatted(decade, w2));
 
-            try{
-                double c_w1_w2 = Double.parseDouble(countOverall);
-                double N = Double.parseDouble(getValue(bigramCountPath));
-                double c_w1 = Double.parseDouble(getValue(w1CountPath));
-                double c_w2 = Double.parseDouble(getValue(w2CountPath));
+            double c_w1_w2 = Double.parseDouble(countOverall);
+            double N = Double.parseDouble(getValue(bigramCountPath));
+            double c_w1 = Double.parseDouble(getValue(w1CountPath));
+            double c_w2 = Double.parseDouble(getValue(w2CountPath));
 
-                if(c_w1_w2 == N || Math.log(c_w1_w2/N) == 0.0) {return; /*0 in the denominator*/}
-                if(c_w1 == 1 && c_w2 == 1 && c_w1_w2 == 1) {return;}
+            if(c_w1_w2 == N || Math.log(c_w1_w2/N) == 0.0) {return; /*0 in the denominator*/}
+            if(c_w1 == 1 && c_w2 == 1 && c_w1_w2 == 1) {return;}
 
-                double npmi = calculateNPMI(c_w1_w2, N, c_w1, c_w2);
-                if(npmi < minPmi || npmi >= 1.0){
-                    return;
-                }
+            double npmi = calculateNPMI(c_w1_w2, N, c_w1, c_w2);
 
-                outKey.set(decade);
-                outValue.set("%s,%s,%s".formatted(w1,w2,npmi));
-                context.write(outKey, outValue);
-            } catch (IOException ignored){}
+            outKey.set(decade);
+            outValue.set("%s,%s,%s".formatted(w1,w2,npmi));
+            context.write(outKey, outValue);
         }
 
         private double calculateNPMI(double c_w1_w2, double N, double c_w1, double c_w2) {
@@ -92,9 +84,9 @@ public class Step2 {
             if(cache.contains(path.toString())){
                 value = cache.get(path.toString());
             } else {
-                try(BufferedInputStream reader = new BufferedInputStream(fs.open(path))){
-                    value = new String(reader.readAllBytes());
-                }
+                BufferedInputStream reader = new BufferedInputStream(fs.open(path));
+                value = new String(reader.readAllBytes());
+                reader.close();
                 cache.put(path.toString(), value);
             }
             return value;
@@ -114,22 +106,28 @@ public class Step2 {
         @Override
         protected void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
 
-            try{
-                Path folderPath = new Path("hdfs:///step3/");
-                fs.mkdirs(folderPath);
+            Path folderPath = new Path("hdfs:///step3/");
+            fs.mkdirs(folderPath);
 
-                double npmiTotalInDecade = 0;
-                for(Text value : values){
-                    String[] valueTokens = value.toString().split(",");
-                    npmiTotalInDecade += Double.parseDouble(valueTokens[NPMI_VALUE_INDEX]);
-                    context.write(key, value);
+            double npmiTotalInDecade = 0;
+            for(Text value : values){
+                String[] valueTokens = value.toString().split(",");
+                npmiTotalInDecade += Double.parseDouble(valueTokens[NPMI_VALUE_INDEX]);
+                context.write(key, value);
+            }
+
+            Path filePath = new Path(folderPath, key.toString());
+            boolean success;
+            do{
+                try{
+                    OutputStream s = fs.create(filePath);
+                    s.write(String.valueOf(npmiTotalInDecade).getBytes());
+                    s.close();
+                    success = true;
+                } catch (IOException e){
+                    success = false;
                 }
-
-                Path filePath = new Path(folderPath, key.toString());
-                OutputStream s = fs.create(filePath);
-                s.write(String.valueOf(npmiTotalInDecade).getBytes());
-                s.close();
-            } catch(IOException ignored){}
+            } while(!success);
         }
     }
 
@@ -145,9 +143,7 @@ public class Step2 {
         readArgs(args);
         System.out.println("[DEBUG] output path: " + _outputPath);
         System.out.println("[DEBUG] input path: " + _inputPath);
-        System.out.println("[DEBUG] minPmi: " + _minPmi);
         Configuration conf = new Configuration();
-        conf.set("minPmi", String.valueOf(_minPmi));
         try {
             Job job = Job.getInstance(conf, "Step2");
             job.setJarByClass(Step2.class);
@@ -170,35 +166,11 @@ public class Step2 {
         List<String> argsList = new LinkedList<>();
         argsList.add("-inputurl");
         argsList.add("-outputurl");
-        argsList.add("-minpmi");
 
         for (int i = 0; i < args.length; i++) {
             String arg = args[i].toLowerCase();
             String errorMessage;
 
-            if (arg.equals("-minpmi")) {
-                errorMessage = "Missing minimum pmi\n";
-                try{
-                    if(argsList.contains(args[i+1])){
-                        printErrorAndExit(errorMessage);
-                    }
-                    try{
-                        _minPmi = Double.parseDouble(args[i+1]);
-                    } catch (NumberFormatException e2){
-                        System.out.println();
-                        printErrorAndExit("Invalid minimum pmi\n");
-                    }
-                    if(_minPmi < 0) {
-                        System.out.println();
-                        printErrorAndExit("Invalid minimum pmi\n");
-                    }
-                    i++;
-                    continue;
-                } catch (IndexOutOfBoundsException e){
-                    System.out.println();
-                    printErrorAndExit(errorMessage);
-                }
-            }
             if (arg.equals("-inputurl")) {
                 errorMessage = "Missing input url\n";
                 try{
@@ -229,17 +201,12 @@ public class Step2 {
             }
         }
 
-        if(_minPmi == null){
-            printErrorAndExit("Argument for minimum pmi not found\n");
-        }
         if(_inputPath == null){
             printErrorAndExit("Argument for input url not found\n");
         }
         if(_outputPath == null){
             printErrorAndExit("Argument for output url not found\n");
         }
-
-
     }
 
     private static void printErrorAndExit(String errorMessage) {

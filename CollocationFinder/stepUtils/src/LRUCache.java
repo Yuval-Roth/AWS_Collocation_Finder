@@ -3,7 +3,7 @@ import java.util.Map;
 
 public class LRUCache<K,V> {
 
-    private final Map<K,Pair<V, DoublyLinkedList.Node<K>>> mainMemory;
+    private final Map<K,Pair<V, Node<K>>> mainMemory;
     private final DoublyLinkedList<K> lruQueue;
     private final int maxCapacity;
     private int size;
@@ -22,7 +22,7 @@ public class LRUCache<K,V> {
             mainMemory.remove(node.data);
             size--;
         }
-        DoublyLinkedList.Node<K> node = lruQueue.add(key);
+        Node<K> node = lruQueue.add(key);
         size++;
         mainMemory.put(key,new Pair<>(value,node));
     }
@@ -31,9 +31,9 @@ public class LRUCache<K,V> {
         if(mostRecentlyUsed != null && mostRecentlyUsed.key.equals(key)){
             return mostRecentlyUsed.value;
         }
-        Pair<V, DoublyLinkedList.Node<K>> entry;
+        Pair<V, Node<K>> entry;
         if((entry = mainMemory.get(key)) != null){
-            DoublyLinkedList.Node<K> node = entry.value;
+            Node<K> node = entry.value;
             lruQueue.remove(node);
             lruQueue.add(node);
             V toReturn = entry.key;

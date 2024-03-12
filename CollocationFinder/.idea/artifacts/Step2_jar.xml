@@ -1,6 +1,6 @@
 <component name="ArtifactManager">
   <artifact type="jar" name="step2:jar">
-    <output-path>$PROJECT_DIR$/out/artifacts/step2_jar</output-path>
+    <output-path>$PROJECT_DIR$/out/artifacts</output-path>
     <root id="archive" name="step2.jar">
       <element id="module-output" name="step2" />
       <element id="module-output" name="stepUtils" />

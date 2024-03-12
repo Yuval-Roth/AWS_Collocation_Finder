@@ -1,6 +1,6 @@
 <component name="ArtifactManager">
   <artifact type="jar" name="step3:jar">
-    <output-path>$PROJECT_DIR$/out/artifacts/step3_jar</output-path>
+    <output-path>$PROJECT_DIR$/out/artifacts</output-path>
     <root id="archive" name="step3.jar">
       <element id="directory" name="META-INF">
         <element id="file-copy" path="$PROJECT_DIR$/src/META-INF/MANIFEST.MF" />

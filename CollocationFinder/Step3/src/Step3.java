@@ -20,6 +20,7 @@ public class Step3 {
     private static Path _inputPath;
     private static Path _outputPath;
     private static Double _relMinPmi;
+    private static Double _minPmi;
 
     public static class Step3Mapper extends Mapper<LongWritable, Text, Text, Text> {
         private static final int VALUE_NPMI_INDEX = 2;
@@ -28,11 +29,14 @@ public class Step3 {
         private Text outValue;
         private FileSystem fs;
         private double relMinPmi;
+        private double minPmi;
         private LRUCache<String, Double> cache;
+
 
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
             cache = new LRUCache<>(CACHE_SIZE);
+            minPmi = Double.parseDouble(context.getConfiguration().get("minPmi"));
             relMinPmi = Double.parseDouble(context.getConfiguration().get("relMinPmi"));
             outKey = new Text();
             outValue = new Text("");
@@ -41,34 +45,32 @@ public class Step3 {
 
         @Override
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
-            try{
-                String[] values = value.toString().split("\\s+");
-                String decade = values[0];
+            String[] values = value.toString().split("\\s+");
+            String decade = values[0];
 
-                Path folderPath = new Path("hdfs:///step3/");
-                Path filePath = new Path(folderPath, decade);
+            Path folderPath = new Path("hdfs:///step3/");
+            Path filePath = new Path(folderPath, decade);
 
-                double npmiTotalInDecade = 0;
-                if(cache.contains(decade)){
-                    npmiTotalInDecade = cache.get(decade);
-                } else {
-                    try (BufferedInputStream reader = new BufferedInputStream(fs.open(filePath))) {
-                        npmiTotalInDecade = Double.parseDouble(new String(reader.readAllBytes()));
-                    }
-                    cache.put(decade, npmiTotalInDecade);
-                }
+            double npmiTotalInDecade = 0;
+            if(cache.contains(decade)){
+                npmiTotalInDecade = cache.get(decade);
+            } else {
+                BufferedInputStream reader = new BufferedInputStream(fs.open(filePath));
+                npmiTotalInDecade = Double.parseDouble(new String(reader.readAllBytes()));
+                cache.put(decade, npmiTotalInDecade);
+                reader.close();
+            }
 
-                String[] valueTokens = value.toString().split(",");
-                double npmi = Double.parseDouble(valueTokens[VALUE_NPMI_INDEX]);
-                double relNpmi = npmi / npmiTotalInDecade;
+            String[] valueTokens = value.toString().split(",");
+            double npmi = Double.parseDouble(valueTokens[VALUE_NPMI_INDEX]);
+            double relNpmi = npmi / npmiTotalInDecade;
 
-                if (relNpmi < relMinPmi) {
-                    return;
-                }
+            if (relNpmi < relMinPmi || npmi < minPmi) {
+                return;
+            }
 
-                outKey.set("%s %s".formatted(values[0], values[1].replace(",", " ")));
-                context.write(outKey, outValue);
-            } catch (IOException ignored){}
+            outKey.set("%s %s".formatted(values[0], values[1].replace(",", " ")));
+            context.write(outKey, outValue);
         }
     }
     public static class DescendingComparator extends WritableComparator {
@@ -108,8 +110,10 @@ public class Step3 {
         System.out.println("[DEBUG] output path: " + _outputPath);
         System.out.println("[DEBUG] input path: " + _inputPath);
         System.out.println("[DEBUG] relMinPmi: " + _relMinPmi);
+        System.out.println("[DEBUG] minPmi: " + _minPmi);
         Configuration conf = new Configuration();
         conf.set("relMinPmi", String.valueOf(_relMinPmi));
+        conf.set("minPmi", String.valueOf(_minPmi));
         try {
             Job job = Job.getInstance(conf, "Step4");
             job.setJarByClass(Step3.class);
@@ -129,6 +133,7 @@ public class Step3 {
 
     private static void readArgs(String[] args) {
         List<String> argsList = new LinkedList<>();
+        argsList.add("-minpmi");
         argsList.add("-relminpmi");
         argsList.add("-inputurl");
         argsList.add("-outputurl");
@@ -136,6 +141,30 @@ public class Step3 {
         for (int i = 0; i < args.length; i++) {
             String arg = args[i].toLowerCase();
             String errorMessage;
+
+            if (arg.equals("-minpmi")) {
+                errorMessage = "Missing minimum pmi\n";
+                try{
+                    if(argsList.contains(args[i+1])){
+                        printErrorAndExit(errorMessage);
+                    }
+                    try{
+                        _minPmi = Double.parseDouble(args[i+1]);
+                    } catch (NumberFormatException e2){
+                        System.out.println();
+                        printErrorAndExit("Invalid minimum pmi\n");
+                    }
+                    if(_minPmi < 0) {
+                        System.out.println();
+                        printErrorAndExit("Invalid minimum pmi\n");
+                    }
+                    i++;
+                    continue;
+                } catch (IndexOutOfBoundsException e){
+                    System.out.println();
+                    printErrorAndExit(errorMessage);
+                }
+            }
             if (arg.equals("-relminpmi")) {
                 errorMessage = "Missing relative minimum pmi\n";
                 try{
@@ -189,6 +218,9 @@ public class Step3 {
             }
         }
 
+        if(_minPmi == null){
+            printErrorAndExit("Argument for minimum pmi not found\n");
+        }
         if(_relMinPmi == null){
             printErrorAndExit("Argument for relative minimum pmi not found\n");
         }
