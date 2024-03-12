@@ -193,7 +193,9 @@ public class Step1 {
     public static void main(String[] args){
         System.out.println("[DEBUG] STEP 1 started!");
         readArgs(args);
-        System.out.println("[DEBUG] output path: " + _outputPath.toString());
+        System.out.println("[DEBUG] output path: " + _outputPath);
+        System.out.println("[DEBUG] input path: " + _inputPath);
+        System.out.println("[DEBUG] stop words file: " + _stopWordsFile);
         Configuration conf = new Configuration();
         conf.set("stopWordsFile", _stopWordsFile);
         try {

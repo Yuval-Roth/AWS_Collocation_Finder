@@ -12,10 +12,23 @@
   <component name="AutoImportSettings">
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
+  <component name="AutomaticModuleUnloader">
+    <loaded-modules>
+      <module name="CollocationFinder" />
+      <module name="main" />
+      <module name="step1" />
+      <module name="step2" />
+      <module name="step3" />
+      <module name="simulation" />
+    </loaded-modules>
+  </component>
   <component name="ChangeListManager">
     <list default="true" id="38712fba-5bfc-473f-a93a-bf4185f68234" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/step1/src/Step1.java" beforeDir="false" afterPath="$PROJECT_DIR$/step1/src/Step1.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Step1/src/Step1.java" beforeDir="false" afterPath="$PROJECT_DIR$/Step1/src/Step1.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Step2/src/Step2.java" beforeDir="false" afterPath="$PROJECT_DIR$/Step2/src/Step2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Step3/src/Step3.java" beforeDir="false" afterPath="$PROJECT_DIR$/Step3/src/Step3.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Step4/src/Step4.java" beforeDir="false" afterPath="$PROJECT_DIR$/Step4/src/Step4.java" afterDir="false" />
     </list>
     <list id="e1d2580c-fec9-453b-b142-f9bd3ac10412" name="Changes by adidi" comment="" />
     <option name="SHOW_DIALOG" value="false" />
@@ -58,7 +71,7 @@
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "git-widget-placeholder": "return__hdfs",
+    "git-widget-placeholder": "reworking__step2",
     "ignore.virus.scanning.warn.message": "true",
     "jdk.selected.JAVA_MODULE": "corretto-17",
     "kotlin-language-version-configured": "true",
@@ -185,6 +198,9 @@
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="UnloadedModulesList">
+    <module name="step4" />
   </component>
   <component name="Vcs.Log.History.Properties">
     <option name="COLUMN_ID_ORDER">

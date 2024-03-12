@@ -14,7 +14,7 @@ import utils.LRUCache;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
-import java.util.Arrays;
+import java.io.OutputStream;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -36,6 +36,7 @@ public class Step2 {
         FileSystem fs;
         private Text outKey;
         private Text outValue;
+        private double minPmi;
 
         private LRUCache<String, String> cache;
 
@@ -45,6 +46,7 @@ public class Step2 {
             outKey = new Text();
             outValue = new Text();
             fs = FileSystem.get(context.getConfiguration());
+            minPmi = Double.parseDouble(context.getConfiguration().get("minPmi"));
         }
 
         @Override
@@ -58,85 +60,26 @@ public class Step2 {
             String w1 = keyTokens[W1_KEY_INDEX];
             String w2 = keyTokens[W2_KEY_INDEX];
             String countOverall = values[1];
-            String bigramCountInDecade;
-            String w1CountInDecade;
-            String w2CountInDecade;
             Path bigramCountPath = new Path(folderPath, "%s-_-_".formatted(decade));
             Path w1CountPath = new Path(folderPath, "%s-%s-_".formatted(decade, w1));
             Path w2CountPath = new Path(folderPath, "%s-_-%s".formatted(decade, w2));
 
-            if(cache.contains(bigramCountPath.toString())){
-                bigramCountInDecade = cache.get(bigramCountPath.toString());
-            } else {
-                try(BufferedInputStream reader = new BufferedInputStream(fs.open(bigramCountPath))){
-                    bigramCountInDecade = new String(reader.readAllBytes());
-                }
-                cache.put(bigramCountPath.toString(), bigramCountInDecade);
+            double c_w1_w2 = Double.parseDouble(countOverall);
+            double N = Double.parseDouble(getValue(bigramCountPath));
+            double c_w1 = Double.parseDouble(getValue(w1CountPath));
+            double c_w2 = Double.parseDouble(getValue(w2CountPath));
+
+            if(c_w1_w2 == N || Math.log(c_w1_w2/N) == 0.0) {return; /*0 in the denominator*/}
+            if(c_w1 == 1 && c_w2 == 1 && c_w1_w2 == 1) {return;}
+
+            double npmi = calculateNPMI(c_w1_w2, N, c_w1, c_w2);
+            if(npmi < minPmi || npmi >= 1.0){
+                return;
             }
 
-            if(cache.contains(w1CountPath.toString())){
-                w1CountInDecade = cache.get(w1CountPath.toString());
-            } else {
-                try(BufferedInputStream reader = new BufferedInputStream(fs.open(w1CountPath))){
-                    w1CountInDecade = new String(reader.readAllBytes());
-                }
-                cache.put(w1CountPath.toString(), w1CountInDecade);
-            }
-
-            if(cache.contains(w2CountPath.toString())){
-                w2CountInDecade = cache.get(w2CountPath.toString());
-            } else {
-                try(BufferedInputStream reader = new BufferedInputStream(fs.open(w2CountPath))){
-                    w2CountInDecade = new String(reader.readAllBytes());
-                }
-                cache.put(w2CountPath.toString(), w2CountInDecade);
-            }
-
-            outKey.set(values[0]);
-            outValue.set("%s,%s,%s,%s".formatted(countOverall,
-                    bigramCountInDecade,w1CountInDecade,w2CountInDecade));
-            context.write(outKey, outValue);
-        }
-    }
-
-    public static class C_W_Reducer extends Reducer<Text, Text, Text, DoubleWritable> {
-
-        // <VALUE INDEXES>
-        private static final int COUNT_OVERALL_VALUE_INDEX = 0;
-        private static final int BIGRAM_COUNT_IN_DECADE_INDEX = 1;
-        private static final int W1_COUNT_IN_DECADE_INDEX = 2;
-        private static final int W2_COUNT_IN_DECADE_INDEX = 3;
-        // </VALUE INDEXES>
-
-        DoubleWritable outValue;
-        private double minPmi;
-
-        @Override
-        protected void setup(Context context) throws IOException, InterruptedException {
-            outValue = new DoubleWritable();
-            minPmi = Double.parseDouble(context.getConfiguration().get("minPmi"));
-        }
-
-        @Override
-        protected void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
-            for(Text value : values){
-                String[] valueTokens = value.toString().split(",");
-                Double[] doubleTokens = Arrays.stream(valueTokens)
-                        .map(Double::parseDouble)
-                        .toArray(Double[]::new);
-
-                double npmi = calculateNPMI(
-                        doubleTokens[COUNT_OVERALL_VALUE_INDEX],
-                        doubleTokens[BIGRAM_COUNT_IN_DECADE_INDEX],
-                        doubleTokens[W1_COUNT_IN_DECADE_INDEX],
-                        doubleTokens[W2_COUNT_IN_DECADE_INDEX]);
-
-                if(npmi < minPmi){
-                    continue;
-                }
-                outValue.set(npmi);
-                context.write(key, outValue);;
-            }
+            outKey.set(decade);
+            outValue.set("%s,%s,%s".formatted(w1,w2,npmi));
+            context.write(outKey, outValue);;
         }
 
         private double calculateNPMI(double c_w1_w2, double N, double c_w1, double c_w2) {
@@ -144,10 +87,56 @@ public class Step2 {
             return -1 * pmi / Math.log(c_w1_w2 / N);
         }
 
+        private String getValue(Path path) throws IOException {
+            String value;
+            if(cache.contains(path.toString())){
+                value = cache.get(path.toString());
+            } else {
+                try(BufferedInputStream reader = new BufferedInputStream(fs.open(path))){
+                    value = new String(reader.readAllBytes());
+                }
+                cache.put(path.toString(), value);
+            }
+            return value;
+        }
+    }
+
+    public static class Step2Reducer extends Reducer<Text, Text, Text, Text> {
+
+        private static int NPMI_VALUE_INDEX = 2;
+        private FileSystem fs;
+
+        @Override
+        protected void setup(Context context) throws IOException, InterruptedException {
+            fs = FileSystem.get(context.getConfiguration());
+        }
+
+        @Override
+        protected void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
+            Path folderPath = new Path("hdfs:///step3/");
+            fs.mkdirs(folderPath);
+
+            double npmiTotalInDecade = 0;
+            for(Text value : values){
+                String[] valueTokens = value.toString().split(",");
+                npmiTotalInDecade += Double.parseDouble(valueTokens[NPMI_VALUE_INDEX]);
+                context.write(key, value);
+            }
+
+            Path filePath = new Path(folderPath, key.toString());
+            OutputStream s = fs.create(filePath);
+            s.write(String.valueOf(npmiTotalInDecade).getBytes());
+            s.close();
+        }
+
+
     }
     public static void main(String[] args){
         System.out.println("[DEBUG] STEP 2 started!");
         readArgs(args);
+        System.out.println("[DEBUG] output path: " + _outputPath);
+        System.out.println("[DEBUG] input path: " + _inputPath);
+        System.out.println("[DEBUG] minPmi: " + _minPmi);
         Configuration conf = new Configuration();
         conf.set("minPmi", String.valueOf(_minPmi));
         try {
@@ -155,11 +144,11 @@ public class Step2 {
             job.setJarByClass(Step2.class);
             job.setMapperClass(C_W_Mapper.class);
             job.setPartitionerClass(DecadesPartitioner.class);
-            job.setReducerClass(C_W_Reducer.class);
+            job.setReducerClass(Step2Reducer.class);
             job.setMapOutputKeyClass(Text.class);
             job.setMapOutputValueClass(Text.class);
             job.setOutputKeyClass(Text.class);
-            job.setOutputValueClass(DoubleWritable.class);
+            job.setOutputValueClass(Text.class);
             FileInputFormat.addInputPath(job, _inputPath);
             FileOutputFormat.setOutputPath(job, _outputPath);
             System.exit(job.waitForCompletion(true) ? 0 : 1);

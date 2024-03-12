@@ -52,12 +52,11 @@ public class CollocationFinder {
         String[] firstArg = {
                 "-stopWordsFile "+ STOP_WORDS_FILE,
                 "-minPmi "+minPmi,
-                "",
                 "-relMinPmi "+relMinPmi
         };
         String output = HADOOP_OUTPUTS_URL + UUID.randomUUID();
         String input = inputUrl;
-        int jobsCount = 4;
+        int jobsCount = 3;
         for(int i = 1; i <= jobsCount; i++){
             String _args = JAR_STEP_ARGS.formatted(firstArg[i - 1], input, output);
             HadoopJarStepConfig step = new HadoopJarStepConfig()

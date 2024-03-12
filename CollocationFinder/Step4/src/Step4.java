@@ -103,6 +103,9 @@ public class Step4 {
     public static void main(String[] args){
         System.out.println("[DEBUG] STEP 4 started!");
         readArgs(args);
+        System.out.println("[DEBUG] output path: " + _outputPath);
+        System.out.println("[DEBUG] input path: " + _inputPath);
+        System.out.println("[DEBUG] relMinPmi: " + _relMinPmi);
         Configuration conf = new Configuration();
         conf.set("relMinPmi", String.valueOf(_relMinPmi));
         try {
