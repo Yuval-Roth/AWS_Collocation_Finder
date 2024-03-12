@@ -28,7 +28,7 @@ public class Step4 {
         private Text outValue;
         private FileSystem fs;
         private double relMinPmi;
-        private LRUCache<String, String> cache;
+        private LRUCache<String, Double> cache;
 
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
@@ -49,12 +49,12 @@ public class Step4 {
             double npmiTotalInDecade = 0;
 
             if(cache.contains(decade)){
-                npmiTotalInDecade = Double.parseDouble(cache.get(decade));
+                npmiTotalInDecade = cache.get(decade);
             } else {
                 try (BufferedInputStream reader = new BufferedInputStream(fs.open(filePath))) {
                     npmiTotalInDecade = Double.parseDouble(new String(reader.readAllBytes()));
                 }
-                cache.put(decade, String.valueOf(npmiTotalInDecade));
+                cache.put(decade, npmiTotalInDecade);
             }
 
             String[] valueTokens = value.toString().split(",");
