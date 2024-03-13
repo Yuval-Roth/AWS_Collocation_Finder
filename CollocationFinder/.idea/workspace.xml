@@ -23,10 +23,6 @@
   <component name="ChangeListManager">
     <list default="true" id="38712fba-5bfc-473f-a93a-bf4185f68234" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/simulation/src/emrSimulation/EMRSimulator.java" beforeDir="false" afterPath="$PROJECT_DIR$/simulation/src/emrSimulation/EMRSimulator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/step1/src/Step1.java" beforeDir="false" afterPath="$PROJECT_DIR$/step1/src/Step1.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/step2/src/Step2.java" beforeDir="false" afterPath="$PROJECT_DIR$/step2/src/Step2.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/step3/src/Step3.java" beforeDir="false" afterPath="$PROJECT_DIR$/step3/src/Step3.java" afterDir="false" />
     </list>
     <list id="e1d2580c-fec9-453b-b142-f9bd3ac10412" name="Changes by adidi" comment="" />
     <option name="SHOW_DIALOG" value="false" />
@@ -77,7 +73,7 @@
     "ignore.virus.scanning.warn.message": "true",
     "jdk.selected.JAVA_MODULE": "corretto-17",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/Yuval/Desktop/emrSimulation",
+    "last_opened_file_path": "C:/Users/Yuval/git/Distributed_systems_assignment_2/CollocationFinder",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -113,7 +109,7 @@
     <configuration name="CollocationFinder" type="Application" factoryName="Application" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="CollocationFinder" />
       <module name="main" />
-      <option name="PROGRAM_PARAMETERS" value="-minpmi 0.5 -relminpmi 0.2 -inputurl s3://distributed-systems-2024-bucket-yuval-adi/hadoop/inputs/small_2gram_hebrew" />
+      <option name="PROGRAM_PARAMETERS" value="-minpmi 0.5 -relminpmi 0.2 -inputurl s3://datasets.elasticmapreduce/ngrams/books/20090715/eng-all/2gram/data " />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -199,7 +195,7 @@
       <workItem from="1710316771540" duration="22000" />
       <workItem from="1710316795781" duration="36000" />
       <workItem from="1710316843943" duration="18962000" />
-      <workItem from="1710361981172" duration="2911000" />
+      <workItem from="1710361981172" duration="5789000" />
     </task>
     <servers />
   </component>
