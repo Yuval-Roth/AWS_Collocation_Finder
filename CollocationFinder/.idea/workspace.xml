@@ -23,9 +23,10 @@
   <component name="ChangeListManager">
     <list default="true" id="38712fba-5bfc-473f-a93a-bf4185f68234" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Step2/src/Step2.java" beforeDir="false" afterPath="$PROJECT_DIR$/Step2/src/Step2.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Step3/src/Step3.java" beforeDir="false" afterPath="$PROJECT_DIR$/Step3/src/Step3.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/simulation/src/emrSimulation/EMRSimulator.java" beforeDir="false" afterPath="$PROJECT_DIR$/simulation/src/emrSimulation/EMRSimulator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/step1/src/Step1.java" beforeDir="false" afterPath="$PROJECT_DIR$/step1/src/Step1.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/step2/src/Step2.java" beforeDir="false" afterPath="$PROJECT_DIR$/step2/src/Step2.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/step3/src/Step3.java" beforeDir="false" afterPath="$PROJECT_DIR$/step3/src/Step3.java" afterDir="false" />
     </list>
     <list id="e1d2580c-fec9-453b-b142-f9bd3ac10412" name="Changes by adidi" comment="" />
     <option name="SHOW_DIALOG" value="false" />
@@ -60,7 +61,7 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "Application.CollocationFinder.executor": "Run",
-    "Application.EMRSimulator.executor": "Debug",
+    "Application.EMRSimulator.executor": "Run",
     "Application.LRUCache.executor": "Run",
     "Application.Step1.executor": "Run",
     "Application.Step2.executor": "Debug",
@@ -72,11 +73,11 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "extract.method.default.visibility": "private",
-    "git-widget-placeholder": "remove__hdfs2",
+    "git-widget-placeholder": "main",
     "ignore.virus.scanning.warn.message": "true",
     "jdk.selected.JAVA_MODULE": "corretto-17",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/Yuval/git/Distributed_systems_assignment_2/CollocationFinder/simulation",
+    "last_opened_file_path": "C:/Users/Yuval/Desktop/emrSimulation",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -108,7 +109,7 @@
       <recent name="" />
     </key>
   </component>
-  <component name="RunManager" selected="Application.EMRSimulator">
+  <component name="RunManager" selected="Application.CollocationFinder">
     <configuration name="CollocationFinder" type="Application" factoryName="Application" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="CollocationFinder" />
       <module name="main" />
@@ -198,7 +199,7 @@
       <workItem from="1710316771540" duration="22000" />
       <workItem from="1710316795781" duration="36000" />
       <workItem from="1710316843943" duration="18962000" />
-      <workItem from="1710361981172" duration="1429000" />
+      <workItem from="1710361981172" duration="2911000" />
     </task>
     <servers />
   </component>
@@ -226,7 +227,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/simulation/src/emrSimulation/SimulatedReducer.java</url>
-          <line>56</line>
+          <line>51</line>
           <option name="timeStamp" value="9" />
         </line-breakpoint>
       </breakpoints>

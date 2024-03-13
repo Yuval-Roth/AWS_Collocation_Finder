@@ -22,7 +22,6 @@ public class EMRSimulator {
 
             // Step 1
             Configuration conf = new Configuration();
-            Job job = Job.getInstance(conf, "Step1");
             conf.set("stopWordsFile", "heb_stop_words.txt");
             conf.set("corpusPercentage", "1.0");
             conf.set("language", "hebrew");
@@ -49,8 +48,7 @@ public class EMRSimulator {
             conf.set("relMinPmi", "0.2");
             Step3Mapper step3Mapper = new Step3Mapper(input,conf, new Step3Comparator());
             step3Mapper.run();
-            Map<String, Iterable<String>> Step2Output = step3Mapper.getOutput();
-            Step3Reducer step3Reducer = new Step3Reducer(Step2Output,conf);
+            Step3Reducer step3Reducer = new Step3Reducer(step3Mapper.getOutput(),conf);
             step3Reducer.run();
             String step3Output = step3Reducer.getOutput();
             System.out.println(step3Output);

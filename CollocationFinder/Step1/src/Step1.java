@@ -291,7 +291,7 @@ public class Step1 {
             job.setMapOutputKeyClass(Text.class);
             job.setMapOutputValueClass(LongWritable.class);
             job.setOutputKeyClass(Text.class);
-            job.setOutputValueClass(LongWritable.class);
+            job.setOutputValueClass(Text.class);
             if(_compressed) {
                 job.setInputFormatClass(SequenceFileInputFormat.class);
             }

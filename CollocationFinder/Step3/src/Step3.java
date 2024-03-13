@@ -3,6 +3,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -99,6 +100,12 @@ public class Step3 {
         }
     }
 
+    public static class Step3Partitioner extends Partitioner<Text, Text> {
+        public int getPartition(Text key, Text value, int numPartitions) {
+            String[] keyTokens = key.toString().split(",");
+            return Integer.parseInt(String.valueOf(keyTokens[0].charAt(2))) % numPartitions;
+        }
+    }
 
     public static class Step3Comparator extends WritableComparator {
 
@@ -154,11 +161,13 @@ public class Step3 {
             Job job = Job.getInstance(conf, "Step4");
             job.setJarByClass(Step3.class);
             job.setMapperClass(Step3Mapper.class);
+            job.setSortComparatorClass(Step3Comparator.class);
+            job.setPartitionerClass(Step3Partitioner.class);
+            job.setReducerClass(Step3Reducer.class);
             job.setMapOutputKeyClass(Text.class);
             job.setMapOutputValueClass(Text.class);
             job.setOutputKeyClass(Text.class);
             job.setOutputValueClass(Text.class);
-            job.setSortComparatorClass(Step3Comparator.class);
             FileInputFormat.addInputPath(job, _inputPath);
             FileOutputFormat.setOutputPath(job, _outputPath);
             System.exit(job.waitForCompletion(true) ? 0 : 1);
