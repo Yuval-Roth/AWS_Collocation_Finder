@@ -8,10 +8,7 @@ import org.apache.hadoop.security.Credentials;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 public abstract class SimulatedMapper<KI,VI,KO,VO> extends Mapper<KI, VI, KO, VO> {
 
@@ -37,10 +34,14 @@ public abstract class SimulatedMapper<KI,VI,KO,VO> extends Mapper<KI, VI, KO, VO
     @Override
     protected abstract void map(KI key, VI value, Context context) throws IOException, InterruptedException;
 
-    public SimulatedMapper(Map<KI, VI> _input, Configuration _conf) {
+    public SimulatedMapper(Map<KI, VI> _input, Configuration _conf){
+        this(_input, _conf, null);
+    }
+
+    public SimulatedMapper(Map<KI, VI> _input, Configuration _conf, Comparator<KO> comparator) {
         conf = _conf;
         input = _input;
-        output = new TreeMap<>();
+        output = new TreeMap<>(comparator);
         context = new Context() {
             private Map.Entry<KI, VI> current;
             private Iterator<Map.Entry<KI, VI>> iter;

@@ -188,9 +188,11 @@ public class Step1 {
         private static final int KEY_W1_INDEX = 1;
         private static final int KEY_W2_INDEX = 2;
         FileSystem fs;
+        Text outkey;
 
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
+            outkey = new Text();
             fs = FileSystem.get(context.getConfiguration());
         }
 
@@ -199,47 +201,47 @@ public class Step1 {
             Path folderPath = new Path("hdfs:///step1/");
             fs.mkdirs(folderPath);
             String[] keyTokens = key.toString().split(",");
-            String decade = keyTokens[KEY_DECADE_INDEX];
-            String w1 = keyTokens[KEY_W1_INDEX];
-            String w2 = keyTokens[KEY_W2_INDEX];
 
             long counter = 0;
             for (LongWritable value : values) {
                 counter += value.get();
+                context.write(key,value);
             }
+            outkey.set(key.toString().replace("_","*"));
+            context.write(outkey,new LongWritable(counter));
 
-            // <decade,w1,w2> -- count C(w1,w2) in decade
-            if(! (w1.equals("_") || w2.equals("_"))){
-                context.write(key, new LongWritable(counter));
-            } else{
-                Path filePath;
-
-                // <decade,_,_> -- count bigrams in decade (N)
-                if(keyTokens[KEY_W1_INDEX].equals("_") && keyTokens[KEY_W2_INDEX].equals("_")){
-                    //"hdfs:///jobs1/1990-_-_"
-                    filePath = new Path(folderPath, "%s-_-_".formatted(decade));
-                }
-                // <decade,w1,_> -- count c(w1) in decade
-                else if(keyTokens[KEY_W2_INDEX].equals("_")) {
-                    //"hdfs:///jobs1/1990-w1-_"
-                    filePath = new Path(folderPath, "%s-%s-_".formatted(decade,w1));
-                }
-                // <decade,_,w2> -- count c(w2) in decade
-                else {
-                    //"hdfs:///jobs1/1990-_-w2"
-                    filePath = new Path(folderPath, "%s-_-%s".formatted(decade,w2));
-                }
-
-                boolean success = false;
-                do{
-                    try{
-                        OutputStream s = fs.create(filePath);
-                        s.write(String.valueOf(counter).getBytes());
-                        s.close();
-                        success = true;
-                    } catch (IOException ignored){}
-                } while(!success);
-            }
+//            // <decade,w1,w2> -- count C(w1,w2) in decade
+//            if(! (w1.equals("_") || w2.equals("_"))){
+//                context.write(key, new LongWritable(counter));
+//            } else{
+//                Path filePath;
+//
+//                // <decade,_,_> -- count bigrams in decade (N)
+//                if(keyTokens[KEY_W1_INDEX].equals("_") && keyTokens[KEY_W2_INDEX].equals("_")){
+//                    //"hdfs:///jobs1/1990-_-_"
+//                    filePath = new Path(folderPath, "%s-_-_".formatted(decade));
+//                }
+//                // <decade,w1,_> -- count c(w1) in decade
+//                else if(keyTokens[KEY_W2_INDEX].equals("_")) {
+//                    //"hdfs:///jobs1/1990-w1-_"
+//                    filePath = new Path(folderPath, "%s-%s-_".formatted(decade,w1));
+//                }
+//                // <decade,_,w2> -- count c(w2) in decade
+//                else {
+//                    //"hdfs:///jobs1/1990-_-w2"
+//                    filePath = new Path(folderPath, "%s-_-%s".formatted(decade,w2));
+//                }
+//
+//                boolean success = false;
+//                do{
+//                    try{
+//                        OutputStream s = fs.create(filePath);
+//                        s.write(String.valueOf(counter).getBytes());
+//                        s.close();
+//                        success = true;
+//                    } catch (IOException ignored){}
+//                } while(!success);
+//            }
         }
     }
 
@@ -279,25 +281,57 @@ public class Step1 {
         @Override
         public int compare(WritableComparable a, WritableComparable b) {
 
-            if(a.toString().equals(b.toString())){
-                return 0;
+            int superAnswer = super.compare(a, b);
+            int ans;
+            if((ans = superAnswer) != 0){
+
+                String[] aTokens = a.toString().split(",");
+                String[] bTokens = b.toString().split(",");
+
+                String aW1 = aTokens[W1_INDEX];
+                String aW2 = aTokens[W2_INDEX];
+                String bW1 = bTokens[W1_INDEX];
+                String bW2 = bTokens[W2_INDEX];
+
+                if((ans = aTokens[DECADE_INDEX].compareTo(bTokens[DECADE_INDEX])) == 0){
+
+                    // ans == 0 -> true
+
+                    // combine <decade,_,_> with <decade,*,*>
+                    if(aW1.equals("*") && aW2.equals("*")){
+                        if(bW1.equals("_") && bW2.equals("_")){
+                            // ans = 0; // already true
+                        }
+                    } else if(bW1.equals("*") && bW2.equals("*")){
+                        if(aW1.equals("_") && aW2.equals("_")){
+                            // ans = 0; // already true
+                        }
+                    }
+                    // --------------------------------------- |
+
+                    // combine <decade,w1,_> with <decade,w1,*>
+                    else if(aW1.equals(bW1) && ! aW1.equals("_") && !aW1.equals("*")){
+                        if(aW2.equals("_") && bW2.equals("*")){
+                            // ans = 0; // already true
+                        }
+                        if(aW2.equals("*") && bW2.equals("_")){
+                            // ans = 0; // already true
+                        }
+                    }
+                    // combine <decade,_,w2> with <decade,*,w2>
+                    else if(aW2.equals(bW2) && ! aW2.equals("_") && !aW2.equals("*")){
+                        if(aW1.equals("_") && bW1.equals("*")){
+                            // ans = 0; // already true
+                        }
+                        if(aW1.equals("*") && bW1.equals("_")){
+                            // ans = 0; // already true
+                        }
+                    } else {
+                        ans = superAnswer;
+                    }
+                }
             }
-
-            String[] aTokens = a.toString().split(",");
-            String[] bTokens = b.toString().split(",");
-
-            String aW1 = aTokens[1];
-            String aW2 = aTokens[2];
-            String bW1 = bTokens[1];
-            String bW2 = bTokens[2];
-
-            if(aW1.equals("*") && bW1.equals("_")){
-                aTokens[1] = "_";
-                if(aW1.equals(bW1))
-                    return -1;
-            }
-
-            return 0;
+            return ans;
         }
     }
 
@@ -327,7 +361,7 @@ public class Step1 {
             job.setMapOutputValueClass(LongWritable.class);
             job.setOutputKeyClass(Text.class);
             job.setOutputValueClass(LongWritable.class);
-//            job.setGroupingComparatorClass();
+            job.setGroupingComparatorClass(Step1KeyGrouper.class);
             if(_compressed) {
                 job.setInputFormatClass(SequenceFileInputFormat.class);
             }
