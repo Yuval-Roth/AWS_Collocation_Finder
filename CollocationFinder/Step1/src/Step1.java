@@ -47,7 +47,7 @@ public class Step1 {
      *  decade,_,w2 -> count_overall
      *  decade,_,_ -> count_overall
      */
-    public static class Step1Mapper extends Mapper<LongWritable, Text, Text, LongWritable> {
+    public static class Step1Mapper extends Mapper<LongWritable, Text, Text, Text> {
 
         private static final String BUCKET_NAME = "distributed-systems-2024-bucket-yuval-adi";
         private static final int W1_INDEX = 0;
@@ -59,7 +59,7 @@ public class Step1 {
         private static final String ENGLISH_CHARS = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz";
         private Set<String> stopWords;
         private AmazonS3 s3;
-        private LongWritable outValue;
+        private Text outValue;
         private Text outKey;
         private double corpusPercentage;
         private String wordChars;
@@ -101,7 +101,7 @@ public class Step1 {
             String w1 = tokens[W1_INDEX];
             String w2 = tokens[W2_INDEX];
 
-            outValue.set(Long.parseLong(tokens[COUNT_OVERALL_INDEX]));
+            outValue.set("%s,%s,%s".formatted(w1,w2,tokens[COUNT_OVERALL_INDEX]));
             outKey.set("%s,%s,%s".formatted(decade,w1,w2));
             context.write(outKey, outValue);
             outKey.set("%s,%s,_".formatted(decade,w1));
@@ -145,7 +145,7 @@ public class Step1 {
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
             outKey = new Text();
-            outValue = new LongWritable();
+            outValue = new Text();
 
             // get configuration
             Configuration conf = context.getConfiguration();
@@ -182,86 +182,32 @@ public class Step1 {
      * emits the following format:
      *    decade,w1,w2 -> w1,w2,count_overall,bigram_count_in_decade
      */
-    public static class Step1Reducer extends Reducer<Text, LongWritable, Text, LongWritable> {
+    public static class Step1Reducer extends Reducer<Text, Text, Text, Text> {
 
         private static final int KEY_DECADE_INDEX = 0;
         private static final int KEY_W1_INDEX = 1;
         private static final int KEY_W2_INDEX = 2;
-        FileSystem fs;
         Text outkey;
+        Text outValue;
 
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
             outkey = new Text();
-            fs = FileSystem.get(context.getConfiguration());
+            outValue = new Text();
         }
 
         @Override
-        protected void reduce(Text key, Iterable<LongWritable> values, Context context) throws IOException, InterruptedException {
-            Path folderPath = new Path("hdfs:///step1/");
-            fs.mkdirs(folderPath);
-            String[] keyTokens = key.toString().split(",");
-
+        protected void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
             long counter = 0;
-            for (LongWritable value : values) {
-                counter += value.get();
+            for (Text value : values) {
+                String[] valueTokens = value.toString().split(",");
+
+                counter += Long.parseLong(valueTokens[2]);
                 context.write(key,value);
             }
             outkey.set(key.toString().replace("_","*"));
-            context.write(outkey,new LongWritable(counter));
-
-//            // <decade,w1,w2> -- count C(w1,w2) in decade
-//            if(! (w1.equals("_") || w2.equals("_"))){
-//                context.write(key, new LongWritable(counter));
-//            } else{
-//                Path filePath;
-//
-//                // <decade,_,_> -- count bigrams in decade (N)
-//                if(keyTokens[KEY_W1_INDEX].equals("_") && keyTokens[KEY_W2_INDEX].equals("_")){
-//                    //"hdfs:///jobs1/1990-_-_"
-//                    filePath = new Path(folderPath, "%s-_-_".formatted(decade));
-//                }
-//                // <decade,w1,_> -- count c(w1) in decade
-//                else if(keyTokens[KEY_W2_INDEX].equals("_")) {
-//                    //"hdfs:///jobs1/1990-w1-_"
-//                    filePath = new Path(folderPath, "%s-%s-_".formatted(decade,w1));
-//                }
-//                // <decade,_,w2> -- count c(w2) in decade
-//                else {
-//                    //"hdfs:///jobs1/1990-_-w2"
-//                    filePath = new Path(folderPath, "%s-_-%s".formatted(decade,w2));
-//                }
-//
-//                boolean success = false;
-//                do{
-//                    try{
-//                        OutputStream s = fs.create(filePath);
-//                        s.write(String.valueOf(counter).getBytes());
-//                        s.close();
-//                        success = true;
-//                    } catch (IOException ignored){}
-//                } while(!success);
-//            }
-        }
-    }
-
-    public static class Step1Combiner extends Reducer<Text, LongWritable, Text, LongWritable>{
-
-        LongWritable outValue;
-
-        @Override
-        protected void setup(Reducer<Text, LongWritable, Text, LongWritable>.Context context) throws IOException, InterruptedException {
-            outValue = new LongWritable();
-        }
-
-        @Override
-        protected void reduce(Text key, Iterable<LongWritable> values, Context context) throws IOException, InterruptedException {
-            long counter = 0;
-            for (LongWritable value : values) {
-                counter += value.get();
-            }
-            outValue.set(counter);
-            context.write(key,outValue);
+            outValue.set(String.valueOf(counter));
+            context.write(outkey,outValue);
         }
     }
 
@@ -269,69 +215,6 @@ public class Step1 {
         public int getPartition(Text key, LongWritable value, int numPartitions) {
             String[] keyTokens = key.toString().split(",");
             return Integer.parseInt(String.valueOf(keyTokens[0].charAt(2))) % numPartitions;
-        }
-    }
-
-    public static class Step1KeyGrouper extends Text.Comparator{
-
-        private static final int DECADE_INDEX = 0;
-        private static final int W1_INDEX = 1;
-        private static final int W2_INDEX = 2;
-
-        @Override
-        public int compare(WritableComparable a, WritableComparable b) {
-
-            int superAnswer = super.compare(a, b);
-            int ans;
-            if((ans = superAnswer) != 0){
-
-                String[] aTokens = a.toString().split(",");
-                String[] bTokens = b.toString().split(",");
-
-                String aW1 = aTokens[W1_INDEX];
-                String aW2 = aTokens[W2_INDEX];
-                String bW1 = bTokens[W1_INDEX];
-                String bW2 = bTokens[W2_INDEX];
-
-                if((ans = aTokens[DECADE_INDEX].compareTo(bTokens[DECADE_INDEX])) == 0){
-
-                    // ans == 0 -> true
-
-                    // combine <decade,_,_> with <decade,*,*>
-                    if(aW1.equals("*") && aW2.equals("*")){
-                        if(bW1.equals("_") && bW2.equals("_")){
-                            // ans = 0; // already true
-                        }
-                    } else if(bW1.equals("*") && bW2.equals("*")){
-                        if(aW1.equals("_") && aW2.equals("_")){
-                            // ans = 0; // already true
-                        }
-                    }
-                    // --------------------------------------- |
-
-                    // combine <decade,w1,_> with <decade,w1,*>
-                    else if(aW1.equals(bW1) && ! aW1.equals("_") && !aW1.equals("*")){
-                        if(aW2.equals("_") && bW2.equals("*")){
-                            // ans = 0; // already true
-                        }
-                        if(aW2.equals("*") && bW2.equals("_")){
-                            // ans = 0; // already true
-                        }
-                    }
-                    // combine <decade,_,w2> with <decade,*,w2>
-                    else if(aW2.equals(bW2) && ! aW2.equals("_") && !aW2.equals("*")){
-                        if(aW1.equals("_") && bW1.equals("*")){
-                            // ans = 0; // already true
-                        }
-                        if(aW1.equals("*") && bW1.equals("_")){
-                            // ans = 0; // already true
-                        }
-                    } else {
-                        ans = superAnswer;
-                    }
-                }
-            }
-            return ans;
         }
     }
 
@@ -356,12 +239,10 @@ public class Step1 {
             job.setMapperClass(Step1Mapper.class);
             job.setPartitionerClass(Step1Partitioner.class);
             job.setReducerClass(Step1Reducer.class);
-            job.setCombinerClass(Step1Combiner.class);
             job.setMapOutputKeyClass(Text.class);
             job.setMapOutputValueClass(LongWritable.class);
             job.setOutputKeyClass(Text.class);
             job.setOutputValueClass(LongWritable.class);
-            job.setGroupingComparatorClass(Step1KeyGrouper.class);
             if(_compressed) {
                 job.setInputFormatClass(SequenceFileInputFormat.class);
             }

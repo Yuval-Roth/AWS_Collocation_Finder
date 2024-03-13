@@ -3,6 +3,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Partitioner;
@@ -46,32 +47,40 @@ public class Step2 {
 
         @Override
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
-
-            Path folderPath = new Path("hdfs:///step1/");
             String[] values = value.toString().split("\\s+");
 
             String[] keyTokens = values[0].split(",");
-            String decade = keyTokens[DECADE_KEY_INDEX];
-            String w1 = keyTokens[W1_KEY_INDEX];
-            String w2 = keyTokens[W2_KEY_INDEX];
-            String countOverall = values[1];
-            Path bigramCountPath = new Path(folderPath, "%s-_-_".formatted(decade));
-            Path w1CountPath = new Path(folderPath, "%s-%s-_".formatted(decade, w1));
-            Path w2CountPath = new Path(folderPath, "%s-_-%s".formatted(decade, w2));
-
-            double c_w1_w2 = Double.parseDouble(countOverall);
-            double N = getValue(bigramCountPath);
-            double c_w1 = getValue(w1CountPath);
-            double c_w2 = getValue(w2CountPath);
-
-            if(c_w1_w2 == N || Math.log(c_w1_w2/N) == 0.0) {return; /*0 in the denominator*/}
-            if(c_w1 == 1 && c_w2 == 1 && c_w1_w2 == 1) {return;}
-
-            double npmi = calculateNPMI(c_w1_w2, N, c_w1, c_w2);
-
-            outKey.set(decade);
-            outValue.set("%s,%s,%s".formatted(w1,w2,npmi));
+            String[] valueTokens = values[1].split(",");
+            outKey.set("%s,%s,%s".formatted(keyTokens[DECADE_KEY_INDEX], keyTokens[W1_KEY_INDEX], keyTokens[W2_KEY_INDEX]));
+            outValue.set(values[1]);
             context.write(outKey, outValue);
+
+
+//            Path folderPath = new Path("hdfs:///step1/");
+//            String[] values = value.toString().split("\\s+");
+//
+//            String[] keyTokens = values[0].split(",");
+//            String decade = keyTokens[DECADE_KEY_INDEX];
+//            String w1 = keyTokens[W1_KEY_INDEX];
+//            String w2 = keyTokens[W2_KEY_INDEX];
+//            String countOverall = values[1];
+//            Path bigramCountPath = new Path(folderPath, "%s-_-_".formatted(decade));
+//            Path w1CountPath = new Path(folderPath, "%s-%s-_".formatted(decade, w1));
+//            Path w2CountPath = new Path(folderPath, "%s-_-%s".formatted(decade, w2));
+//
+//            double c_w1_w2 = Double.parseDouble(countOverall);
+//            double N = getValue(bigramCountPath);
+//            double c_w1 = getValue(w1CountPath);
+//            double c_w2 = getValue(w2CountPath);
+//
+//            if(c_w1_w2 == N || Math.log(c_w1_w2/N) == 0.0) {return; /*0 in the denominator*/}
+//            if(c_w1 == 1 && c_w2 == 1 && c_w1_w2 == 1) {return;}
+//
+//            double npmi = calculateNPMI(c_w1_w2, N, c_w1, c_w2);
+//
+//            outKey.set(decade);
+//            outValue.set("%s,%s,%s".formatted(w1,w2,npmi));
+//            context.write(outKey, outValue);
         }
 
         private double calculateNPMI(double c_w1_w2, double N, double c_w1, double c_w2) {
@@ -79,63 +88,19 @@ public class Step2 {
             return -1 * pmi / Math.log(c_w1_w2 / N);
         }
 
-        private int getValue(Path path) {
-            int value;
-            if(cache.contains(path.toString())){
-                value = cache.get(path.toString());
-            } else {
-                String str = "";
-                boolean success = false;
-                do{
-                    try{
-                        BufferedInputStream reader = new BufferedInputStream(fs.open(path));
-                        str = new String(reader.readAllBytes());
-                        reader.close();
-                        success = ! str.isBlank();
-                    } catch (IOException ignored){}
-                } while (! success);
-                value = Integer.parseInt(str);
-                cache.put(path.toString(), value);
-            }
-            return value;
-        }
     }
 
     public static class Step2Reducer extends Reducer<Text, Text, Text, Text> {
 
-        private static int NPMI_VALUE_INDEX = 2;
-        private FileSystem fs;
+        private static int VALUE_W1_INDEX = 0;
+        private static int VALUE_W2_INDEX = 1;
+        private static int VALUE_NPMI_INDEX = 2;
 
-        @Override
-        protected void setup(Context context) throws IOException, InterruptedException {
-            fs = FileSystem.get(context.getConfiguration());
-        }
 
         @Override
         protected void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
 
-            Path folderPath = new Path("hdfs:///step3/");
-            fs.mkdirs(folderPath);
 
-            double npmiTotalInDecade = 0;
-            for(Text value : values){
-                String[] valueTokens = value.toString().split(",");
-                npmiTotalInDecade += Double.parseDouble(valueTokens[NPMI_VALUE_INDEX]);
-                context.write(key, value);
-            }
-
-            Path filePath = new Path(folderPath, key.toString());
-            boolean success;
-            do{
-                try{
-                    OutputStream s = fs.create(filePath);
-                    s.write(String.valueOf(npmiTotalInDecade).getBytes());
-                    s.close();
-                    success = true;
-                } catch (IOException e){
-                    success = false;
-                }
-            } while(!success);
         }
     }
 
@@ -143,6 +108,69 @@ public class Step2 {
         public int getPartition(Text key, Text value, int numPartitions) {
             String[] keyTokens = key.toString().split(",");
             return Integer.parseInt(String.valueOf(keyTokens[0].charAt(2))) % numPartitions;
+        }
+    }
+
+    public static class Step2KeyGrouper extends Text.Comparator{
+
+        private static final int DECADE_INDEX = 0;
+        private static final int W1_INDEX = 1;
+        private static final int W2_INDEX = 2;
+
+        @Override
+        public int compare(WritableComparable a, WritableComparable b) {
+
+            int superAnswer = super.compare(a, b);
+            int ans;
+            if((ans = superAnswer) != 0){
+
+                String[] aTokens = a.toString().split(",");
+                String[] bTokens = b.toString().split(",");
+
+                String aW1 = aTokens[W1_INDEX];
+                String aW2 = aTokens[W2_INDEX];
+                String bW1 = bTokens[W1_INDEX];
+                String bW2 = bTokens[W2_INDEX];
+
+                if((ans = aTokens[DECADE_INDEX].compareTo(bTokens[DECADE_INDEX])) == 0){
+
+                    // ans == 0 -> true
+
+                    // combine <decade,_,_> with <decade,*,*>
+                    if(aW1.equals("*") && aW2.equals("*")){
+                        if(bW1.equals("_") && bW2.equals("_")){
+                            // ans = 0; // already true
+                        }
+                    } else if(bW1.equals("*") && bW2.equals("*")){
+                        if(aW1.equals("_") && aW2.equals("_")){
+                            // ans = 0; // already true
+                        }
+                    }
+                    // --------------------------------------- |
+
+                    // combine <decade,w1,_> with <decade,w1,*>
+                    else if(aW1.equals(bW1) && ! aW1.equals("_") && !aW1.equals("*")){
+                        if(aW2.equals("_") && bW2.equals("*")){
+                            // ans = 0; // already true
+                        }
+                        if(aW2.equals("*") && bW2.equals("_")){
+                            // ans = 0; // already true
+                        }
+                    }
+                    // combine <decade,_,w2> with <decade,*,w2>
+                    else if(aW2.equals(bW2) && ! aW2.equals("_") && !aW2.equals("*")){
+                        if(aW1.equals("_") && bW1.equals("*")){
+                            // ans = 0; // already true
+                        }
+                        if(aW1.equals("*") && bW1.equals("_")){
+                            // ans = 0; // already true
+                        }
+                    } else {
+                        ans = superAnswer;
+                    }
+                }
+            }
+            return ans;
         }
     }
 
