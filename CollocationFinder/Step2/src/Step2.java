@@ -33,6 +33,7 @@ public class Step2 {
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
             outKey = new Text();
+            outValue = new Text();
         }
 
         @Override
@@ -63,7 +64,6 @@ public class Step2 {
         private static final int VALUE_C_W1_W2_INDEX = 0;
         private static final int VALUE_N_INDEX = 1;
         private static final int VALUE_C_W1_INDEX = 2;
-        private static final int VALUE_C_W2_INDEX = 3;
 
         private long c_w2;
         String currentDecade;

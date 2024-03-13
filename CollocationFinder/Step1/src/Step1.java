@@ -201,7 +201,7 @@ public class Step1 {
         private static final int KEY_DECADE_INDEX = 0;
         private static final int KEY_W1_INDEX = 1;
         private static final int KEY_W2_INDEX = 2;
-        Text outkey;
+        Text outKey;
         Text outValue;
         String currentW1;
         long c_w1;
@@ -210,7 +210,7 @@ public class Step1 {
 
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
-            outkey = new Text();
+            outKey = new Text();
             outValue = new Text();
         }
 
@@ -252,9 +252,9 @@ public class Step1 {
                 for (LongWritable value : values) {
                     counter += value.get();
                 }
-                outkey.set("%s,%s,%s".formatted(decade,w1,w2));
+                outKey.set("%s,%s,%s".formatted(decade,w1,w2));
                 outValue.set("%s,%s,%s".formatted(counter,N,c_w1));
-                context.write(outkey, outValue);
+                context.write(outKey, outValue);
             }
         }
     }

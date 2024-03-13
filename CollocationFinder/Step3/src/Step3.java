@@ -55,8 +55,6 @@ public class Step3 {
     public static class Step3Reducer extends Reducer<Text,Text,Text,Text> {
 
         private static final int KEY_DECADE_INDEX = 0;
-        private static final int KEY_W1_INDEX = 1;
-        private static final int KEY_W2_INDEX = 2;
         private static final int KEY_NPMI_INDEX = 3;
         Text outKey;
         Text outValue;
