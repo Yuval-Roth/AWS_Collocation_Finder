@@ -21,14 +21,12 @@ public class Step2 {
 
     public static class Step2Mapper extends Mapper<LongWritable, Text, Text, Text> {
 
-        private static final int CACHE_SIZE = 10000;
         // <KEY INDEXES>
         private static final int DECADE_KEY_INDEX = 0;
         private static final int W1_KEY_INDEX = 1;
         private static final int W2_KEY_INDEX = 2;
         // </KEY INDEXES>
 
-        FileSystem fs;
         private Text outKey;
         private Text outValue;
 
@@ -41,30 +39,31 @@ public class Step2 {
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
             String[] values = value.toString().split("\\s+");
             String[] keyTokens = values[0].split(",");
-            String[] valueTokens = values[1].split(",");
 
             String decade = keyTokens[DECADE_KEY_INDEX];
             String w1 = keyTokens[W1_KEY_INDEX];
             String w2 = keyTokens[W2_KEY_INDEX];
 
+
+            outValue.set(values[1]);
             outKey.set("%s,_,_".formatted(decade));
-            context.write(outKey, value);
+            context.write(outKey, outValue);
             outKey.set("%s,%s,_".formatted(decade,w2));
-            context.write(outKey, value);
+            context.write(outKey, outValue);
             outKey.set("%s,%s,%s".formatted(decade,w2,w1));
-            context.write(outKey, value);
+            context.write(outKey, outValue);
         }
     }
 
     public static class Step2Reducer extends Reducer<Text, Text, Text, DoubleWritable> {
 
-        private static int KEY_DECADE_INDEX = 0;
-        private static int KEY_W1_INDEX = 1;
-        private static int KEY_W2_INDEX = 2;
-        private static int VALUE_C_W1_W2_INDEX = 0;
-        private static int VALUE_N_INDEX = 1;
-        private static int VALUE_C_W1_INDEX = 2;
-        private static int VALUE_C_W2_INDEX = 3;
+        private static final int KEY_DECADE_INDEX = 0;
+        private static final int KEY_W1_INDEX = 1;
+        private static final int KEY_W2_INDEX = 2;
+        private static final int VALUE_C_W1_W2_INDEX = 0;
+        private static final int VALUE_N_INDEX = 1;
+        private static final int VALUE_C_W1_INDEX = 2;
+        private static final int VALUE_C_W2_INDEX = 3;
 
         private long c_w2;
         String currentDecade;
@@ -121,7 +120,6 @@ public class Step2 {
                 double c_w1_w2 = Double.parseDouble(valueTokens[VALUE_C_W1_W2_INDEX]);
                 double N = Double.parseDouble(valueTokens[VALUE_N_INDEX]);
                 double c_w1 = Double.parseDouble(valueTokens[VALUE_C_W1_INDEX]);
-                double c_w2 = Double.parseDouble(valueTokens[VALUE_C_W2_INDEX]);
 
                 if(Math.log(c_w1_w2/N) == 0) return; // division by zero
 
@@ -162,8 +160,8 @@ public class Step2 {
 
         @Override
         public int compare(WritableComparable a, WritableComparable b) {
-            String[] aTokens = a.toString().split("\\s+");
-            String[] bTokens = b.toString().split("\\s+");
+            String[] aTokens = a.toString().split(",");
+            String[] bTokens = b.toString().split(",");
             int num;
             if((num = aTokens[DECADE_INDEX].compareTo(bTokens[DECADE_INDEX])) != 0){
                 return num;

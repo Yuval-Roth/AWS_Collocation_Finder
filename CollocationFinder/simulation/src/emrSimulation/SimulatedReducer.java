@@ -17,11 +17,6 @@ public abstract class SimulatedReducer<KI,VI,KO,VO> extends Reducer<KI, VI, KO, 
     private final List<String> output;
     private final Configuration conf;
 
-    public String getOutput(Comparator<String> comparator) {
-        output.sort(comparator);
-        return getOutput();
-    }
-
     public String getOutput() {
         StringBuilder output = new StringBuilder();
         for (String text : this.output) {

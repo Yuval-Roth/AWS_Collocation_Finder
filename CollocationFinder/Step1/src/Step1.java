@@ -177,8 +177,8 @@ public class Step1 {
 
         @Override
         public int compare(WritableComparable a, WritableComparable b) {
-            String[] aTokens = a.toString().split("\\s+");
-            String[] bTokens = b.toString().split("\\s+");
+            String[] aTokens = a.toString().split(",");
+            String[] bTokens = b.toString().split(",");
             int num;
             if((num = aTokens[DECADE_INDEX].compareTo(bTokens[DECADE_INDEX])) != 0){
                 return num;

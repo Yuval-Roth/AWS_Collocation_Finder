@@ -86,30 +86,28 @@ public class Step3 {
                     totalNpmiInDecade += Double.parseDouble(value.toString());
                 }
             } else {
-                for (Text value : values) {
-                    double npmi = Double.parseDouble(value.toString());
-                    double relNpmi = npmi / totalNpmiInDecade;
+                double npmi = Double.parseDouble(keyTokens[KEY_NPMI_INDEX]);
+                double relNpmi = npmi / totalNpmiInDecade;
 
-                    if(npmi < minPmi && relNpmi < relMinPmi){
-                        continue;
-                    }
-
-                    outKey.set("%s".formatted(key.toString().replaceAll(","," ")));
-                    context.write(outKey, outValue);
+                if(npmi < minPmi && relNpmi < relMinPmi){
+                    return;
                 }
+
+                outKey.set("%s".formatted(key.toString().replaceAll(","," ")));
+                context.write(outKey, outValue);
             }
         }
     }
 
 
-    public static class DescendingComparator extends WritableComparator {
+    public static class Step3Comparator extends WritableComparator {
 
         private static final int DECADE_INDEX = 0;
         private static final int W1_INDEX = 1;
         private static final int W2_INDEX = 2;
         private static final int NPMI_INDEX = 3;
 
-        DescendingComparator() {
+        Step3Comparator() {
             super(Text.class, true);
         }
 
@@ -160,7 +158,7 @@ public class Step3 {
             job.setMapOutputValueClass(Text.class);
             job.setOutputKeyClass(Text.class);
             job.setOutputValueClass(Text.class);
-            job.setSortComparatorClass(DescendingComparator.class);
+            job.setSortComparatorClass(Step3Comparator.class);
             FileInputFormat.addInputPath(job, _inputPath);
             FileOutputFormat.setOutputPath(job, _outputPath);
             System.exit(job.waitForCompletion(true) ? 0 : 1);
