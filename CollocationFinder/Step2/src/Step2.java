@@ -117,16 +117,14 @@ public class Step2 {
             }
 
             Path filePath = new Path(folderPath, key.toString());
-            boolean success;
+            boolean success = false;
             do{
                 try{
                     OutputStream s = fs.create(filePath);
                     s.write(String.valueOf(npmiTotalInDecade).getBytes());
                     s.close();
                     success = true;
-                } catch (IOException e){
-                    success = false;
-                }
+                } catch (IOException ignored){}
             } while(!success);
         }
     }

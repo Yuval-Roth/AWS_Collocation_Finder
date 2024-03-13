@@ -22,17 +22,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="38712fba-5bfc-473f-a93a-bf4185f68234" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/artifacts/Step1_jar.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/artifacts/Step1_jar.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/artifacts/Step2_jar.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/artifacts/Step2_jar.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/artifacts/Step3_jar.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/artifacts/Step3_jar.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Main/src/CollocationFinder.java" beforeDir="false" afterPath="$PROJECT_DIR$/Main/src/CollocationFinder.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Step1/src/Step1.java" beforeDir="false" afterPath="$PROJECT_DIR$/Step1/src/Step1.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Step2/src/Step2.java" beforeDir="false" afterPath="$PROJECT_DIR$/Step2/src/Step2.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Step3/src/Step3.java" beforeDir="false" afterPath="$PROJECT_DIR$/Step3/src/Step3.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stepUtils/src/DoublyLinkedList.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/stepUtils/src/LRUCache.java" beforeDir="false" afterPath="$PROJECT_DIR$/stepUtils/src/LRUCache.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stepUtils/src/Pair.java" beforeDir="false" />
     </list>
     <list id="e1d2580c-fec9-453b-b142-f9bd3ac10412" name="Changes by adidi" comment="" />
     <option name="SHOW_DIALOG" value="false" />
@@ -78,7 +68,7 @@
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "git-widget-placeholder": "main",
+    "git-widget-placeholder": "5b88844d",
     "ignore.virus.scanning.warn.message": "true",
     "jdk.selected.JAVA_MODULE": "corretto-17",
     "kotlin-language-version-configured": "true",

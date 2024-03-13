@@ -183,16 +183,14 @@ public class Step1 {
                     filePath = new Path(folderPath, "%s-_-%s".formatted(decade,w2));
                 }
 
-                boolean success;
+                boolean success = false;
                 do{
                     try{
                         OutputStream s = fs.create(filePath);
                         s.write(String.valueOf(counter).getBytes());
                         s.close();
                         success = true;
-                    } catch (IOException e){
-                        success = false;
-                    }
+                    } catch (IOException ignored){}
                 } while(!success);
             }
         }

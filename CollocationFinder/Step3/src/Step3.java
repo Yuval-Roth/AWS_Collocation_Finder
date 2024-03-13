@@ -65,7 +65,7 @@ public class Step3 {
             double npmi = Double.parseDouble(valueTokens[VALUE_NPMI_INDEX]);
             double relNpmi = npmi / npmiTotalInDecade;
 
-            if (relNpmi < relMinPmi || npmi < minPmi) {
+            if (relNpmi < relMinPmi && npmi < minPmi) {
                 return;
             }
 
@@ -92,7 +92,7 @@ public class Step3 {
             if((num = aTokens[DECADE_INDEX].compareTo(bTokens[DECADE_INDEX])) != 0){
                 return num;
             }
-            else if ((num = aTokens[NPMI_INDEX].compareTo(bTokens[NPMI_INDEX])) != 0){
+            else if ((num = Double.valueOf(aTokens[NPMI_INDEX]).compareTo(Double.valueOf(bTokens[NPMI_INDEX]))) != 0){
                 return -1 * num;
             }
             else if ((num = aTokens[W1_INDEX].compareTo(bTokens[W1_INDEX])) != 0){
