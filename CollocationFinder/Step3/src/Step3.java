@@ -48,7 +48,7 @@ public class Step3 {
             String[] values = value.toString().split("\\s+");
             String decade = values[0];
 
-            Path folderPath = new Path("hdfs:///step3/");
+            Path folderPath = new Path("/step3/");
             Path filePath = new Path(folderPath, decade);
 
             try{

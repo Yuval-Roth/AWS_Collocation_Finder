@@ -1,4 +1,5 @@
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileContext;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
@@ -30,7 +31,7 @@ public class Step2 {
         private static final int W2_KEY_INDEX = 2;
         // </KEY INDEXES>
 
-        FileSystem fs;
+        FileContext fs;
         private Text outKey;
         private Text outValue;
 
@@ -41,13 +42,13 @@ public class Step2 {
             cache = new LRUCache<>(CACHE_SIZE);
             outKey = new Text();
             outValue = new Text();
-            fs = FileSystem.get(context.getConfiguration());
+            fs = FileContext.getFileContext(context.getConfiguration());
         }
 
         @Override
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
 
-            Path folderPath = new Path("hdfs:///step1/");
+            Path folderPath = new Path("/step1/");
             String[] values = value.toString().split("\\s+");
 
             String[] keyTokens = values[0].split(",");
@@ -123,7 +124,7 @@ public class Step2 {
         @Override
         protected void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
 
-            Path folderPath = new Path("hdfs:///step3/");
+            Path folderPath = new Path("/step3/");
             fs.mkdirs(folderPath);
 
             double npmiTotalInDecade = 0;
