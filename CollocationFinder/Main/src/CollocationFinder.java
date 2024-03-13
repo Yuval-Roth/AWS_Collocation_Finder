@@ -18,16 +18,19 @@ public class CollocationFinder {
     // </S3>
 
     // <APPLICATION DATA>
-    private static final int INSTANCE_COUNT = 9;
     public static final String HADOOP_JARS_URL = BUCKET_URL + "hadoop/jars/";
     public static final String HADOOP_OUTPUTS_URL = BUCKET_URL + "hadoop/outputs/";
     public static final String JAR_STEP_ARGS = "%s -inputUrl %s -outputUrl %s";
     private static final String CREDENTIALS_PATH = getFolderPath() + "credentials.txt";
-    private static final String STOP_WORDS_FILE = "stop_words.txt";
     private static final String USAGE = ""; // TODO: WRITE USAGE
     public static String inputUrl;
     private static Double minPmi;
     private static Double relMinPmi;
+
+    private static final int INSTANCE_COUNT = 9;
+    private static final String LANGUAGE = "english";
+    private static final String STOP_WORDS_FILE = "eng_stop_words.txt";
+    private static final String CORPUS_PERCENTAGE = "0.5";
     // </APPLICATION DATA>
 
     public static void main(String[] args) {
@@ -50,7 +53,7 @@ public class CollocationFinder {
 
         List<StepConfig> stepConfigs = new LinkedList<>();
         String[] firstArg = {
-                "-stopWordsFile "+ STOP_WORDS_FILE,
+                "-stopWordsFile %s -language %s -corpusPercentage %s".formatted(STOP_WORDS_FILE,LANGUAGE,CORPUS_PERCENTAGE),
                 "",
                 "-relMinPmi %f -minPmi %f".formatted(relMinPmi, minPmi)
         };

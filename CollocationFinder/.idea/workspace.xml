@@ -22,17 +22,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="38712fba-5bfc-473f-a93a-bf4185f68234" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/artifacts/Step1_jar.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/artifacts/Step1_jar.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/artifacts/Step2_jar.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/artifacts/Step2_jar.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/artifacts/Step3_jar.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/artifacts/Step3_jar.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Main/src/CollocationFinder.java" beforeDir="false" afterPath="$PROJECT_DIR$/Main/src/CollocationFinder.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Step1/src/Step1.java" beforeDir="false" afterPath="$PROJECT_DIR$/Step1/src/Step1.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Step2/src/Step2.java" beforeDir="false" afterPath="$PROJECT_DIR$/Step2/src/Step2.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Step3/src/Step3.java" beforeDir="false" afterPath="$PROJECT_DIR$/Step3/src/Step3.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stepUtils/src/DoublyLinkedList.java" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/stepUtils/src/LRUCache.java" beforeDir="false" afterPath="$PROJECT_DIR$/stepUtils/src/LRUCache.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stepUtils/src/Pair.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/main/src/CollocationFinder.java" beforeDir="false" afterPath="$PROJECT_DIR$/main/src/CollocationFinder.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/simulation/simulation.iml" beforeDir="false" afterPath="$PROJECT_DIR$/simulation/simulation.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/simulation/src/emrSimulation/EMRSimulator.java" beforeDir="false" afterPath="$PROJECT_DIR$/simulation/src/emrSimulation/EMRSimulator.java" afterDir="false" />
     </list>
     <list id="e1d2580c-fec9-453b-b142-f9bd3ac10412" name="Changes by adidi" comment="" />
     <option name="SHOW_DIALOG" value="false" />
@@ -88,7 +82,7 @@
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "Artifacts",
+    "project.structure.last.edited": "Modules",
     "project.structure.proportion": "0.15",
     "project.structure.side.proportion": "0.3402299",
     "settings.editor.selected.configurable": "project.propVCSSupport.DirectoryMappings",
@@ -114,7 +108,7 @@
       <recent name="" />
     </key>
   </component>
-  <component name="RunManager" selected="Application.CollocationFinder">
+  <component name="RunManager" selected="Application.EMRSimulator">
     <configuration name="CollocationFinder" type="Application" factoryName="Application" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="CollocationFinder" />
       <module name="main" />
@@ -180,13 +174,6 @@
       </list>
     </recent_temporary>
   </component>
-  <component name="SharedIndexes">
-    <attachedChunks>
-      <set>
-        <option value="jdk-17.0.10-corretto-17.0.10-4caba194b151-5cd809f4" />
-      </set>
-    </attachedChunks>
-  </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
@@ -204,7 +191,13 @@
       <workItem from="1710231720186" duration="1104000" />
       <workItem from="1710262416925" duration="1082000" />
       <workItem from="1710271331709" duration="1274000" />
-      <workItem from="1710272624028" duration="12224000" />
+      <workItem from="1710272624028" duration="12953000" />
+      <workItem from="1710313889570" duration="1081000" />
+      <workItem from="1710314987493" duration="1041000" />
+      <workItem from="1710316042637" duration="711000" />
+      <workItem from="1710316771540" duration="22000" />
+      <workItem from="1710316795781" duration="36000" />
+      <workItem from="1710316843943" duration="6838000" />
     </task>
     <servers />
   </component>
@@ -231,10 +224,14 @@
     <breakpoint-manager>
       <breakpoints>
         <line-breakpoint enabled="true" type="java-line">
-          <condition expression="keyTokens.length != 3" language="JAVA" />
           <url>file://$PROJECT_DIR$/simulation/src/emrSimulation/EMRSimulator.java</url>
-          <line>190</line>
-          <option name="timeStamp" value="43" />
+          <line>409</line>
+          <option name="timeStamp" value="54" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/simulation/src/emrSimulation/EMRSimulator.java</url>
+          <line>30</line>
+          <option name="timeStamp" value="55" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

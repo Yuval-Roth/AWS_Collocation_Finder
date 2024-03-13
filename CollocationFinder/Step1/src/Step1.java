@@ -13,6 +13,7 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Partitioner;
 import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 import java.io.IOException;
@@ -24,9 +25,18 @@ import java.util.Set;
 
 
 public class Step1 {
+
+    enum Language {
+        english,
+        hebrew
+    }
+
     private static Path _inputPath;
     private static Path _outputPath;
     private static String _stopWordsFile;
+    private static Boolean _compressed;
+    private static Double _corpusPercentage;
+    private static Language _language;
 
     /**
      * emits the following format:
@@ -42,13 +52,22 @@ public class Step1 {
         private static final int W2_INDEX = 1;
         private static final int DECADE_INDEX = 2;
         private static final int COUNT_OVERALL_INDEX = 3;
+        private static final String NUMBERS = "0123456789";
+        private static final String HEBREW_CHARS = "קראטוןםפשדגכעיחלךףזסבהנמצתץ";
+        private static final String ENGLISH_CHARS = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz";
         private Set<String> stopWords;
         private AmazonS3 s3;
         private LongWritable outValue;
         private Text outKey;
+        private double corpusPercentage;
+        private String wordChars;
+        private Language language;
 
         @Override
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+            if(Math.random() > corpusPercentage){
+                return;
+            }
             String[] tokens = value.toString().split("\\s+");
 
             // remove tags from words if they exist
@@ -60,10 +79,18 @@ public class Step1 {
                 tokens[W2_INDEX] = tokens[W2_INDEX].substring(0,index).trim();
             }
 
-            // skip bad input
-            if (tokens[W1_INDEX].isEmpty() ||
-                tokens[W2_INDEX].isEmpty() ||
-                isMalformedInput(tokens) ||
+            // skip empty words
+            if(tokens[W1_INDEX].isEmpty() || tokens[W2_INDEX].isEmpty()){
+                return;
+            }
+
+            if(language == Language.english){
+                tokens[W1_INDEX] = tokens[W1_INDEX].toLowerCase();
+                tokens[W2_INDEX] = tokens[W2_INDEX].toLowerCase();
+            }
+
+            // skip bad input and stop words
+            if (isMalformedInput(tokens) ||
                 stopWords.contains(tokens[W1_INDEX]) ||
                 stopWords.contains(tokens[W2_INDEX])) {return;}
 
@@ -83,21 +110,30 @@ public class Step1 {
             context.write(outKey, outValue);
         }
 
-        private static boolean isMalformedInput(String[] tokens) {
-            String chars = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZzקראטוןםפשדגכעיחלךףזסבהנמצתץ";
-            String numbers = "0123456789";
+        private boolean isMalformedInput(String[] tokens) {
 
-            return tokens.length < 4 ||
-                    isInvalid(tokens[DECADE_INDEX],numbers) ||
-                    isInvalid(tokens[COUNT_OVERALL_INDEX],numbers) ||
-                    isInvalid(tokens[W1_INDEX],chars) ||
-                    isInvalid(tokens[W2_INDEX],chars);
+            return tokens.length < 5 ||
+                    isInvalidNumber(tokens[DECADE_INDEX]) ||
+                    isInvalidNumber(tokens[COUNT_OVERALL_INDEX]) ||
+                    isInvalidWord(tokens[W1_INDEX]) ||
+                    isInvalidWord(tokens[W2_INDEX]);
         }
 
-        private static boolean isInvalid(String w,String chars) {
+        private  boolean isInvalidWord(String w) {
+
             char[] _w = w.toCharArray();
             for (int i = 0; i < w.length(); i++) {
-                if(chars.indexOf(_w[i]) == -1){
+                if(wordChars.indexOf(_w[i]) == -1){
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private boolean isInvalidNumber(String w) {
+            char[] _w = w.toCharArray();
+            for (int i = 0; i < w.length(); i++) {
+                if(NUMBERS.indexOf(_w[i]) == -1){
                     return true;
                 }
             }
@@ -108,7 +144,16 @@ public class Step1 {
         protected void setup(Context context) throws IOException, InterruptedException {
             outKey = new Text();
             outValue = new LongWritable();
-            String stopWordsFile = context.getConfiguration().get("stopWordsFile");
+
+            // get configuration
+            Configuration conf = context.getConfiguration();
+            corpusPercentage = conf.getDouble("corpusPercentage", 1.0);
+            language = Language.valueOf(conf.get("language"));
+            String stopWordsFile = conf.get("stopWordsFile");
+
+            // optimize for wordChars
+            wordChars = language == Language.english ? ENGLISH_CHARS : HEBREW_CHARS;
+
             s3 = AmazonS3Client.builder().withRegion(Regions.US_WEST_2).build();
             String stopWordsStr = downloadSmallFileFromS3(stopWordsFile);
             stopWords = new HashSet<>();
@@ -231,8 +276,15 @@ public class Step1 {
         System.out.println("[DEBUG] output path: " + _outputPath);
         System.out.println("[DEBUG] input path: " + _inputPath);
         System.out.println("[DEBUG] stop words file: " + _stopWordsFile);
+        System.out.println("[DEBUG] language: " + _language);
+        System.out.println("[DEBUG] corpus percentage: " + _corpusPercentage);
+        System.out.printf("[DEBUG] compressed: %s%n", _compressed == null ? Boolean.FALSE : _compressed );
         Configuration conf = new Configuration();
         conf.set("stopWordsFile", _stopWordsFile);
+        conf.set("language", _language.toString());
+        if(_corpusPercentage != null) {
+            conf.setDouble("corpusPercentage", _corpusPercentage);
+        }
         try {
             Job job = Job.getInstance(conf, "Step1");
             job.setJarByClass(Step1.class);
@@ -244,6 +296,9 @@ public class Step1 {
             job.setMapOutputValueClass(LongWritable.class);
             job.setOutputKeyClass(Text.class);
             job.setOutputValueClass(LongWritable.class);
+            if(_compressed) {
+                job.setInputFormatClass(SequenceFileInputFormat.class);
+            }
             FileInputFormat.addInputPath(job, _inputPath);
             FileOutputFormat.setOutputPath(job, _outputPath);
             System.exit(job.waitForCompletion(true) ? 0 : 1);
@@ -257,9 +312,26 @@ public class Step1 {
         argsList.add("-stopwordsfile");
         argsList.add("-inputurl");
         argsList.add("-outputurl");
+        argsList.add("-corpuspercentage");
+        argsList.add("-compressed");
+        argsList.add("-language");
         for (int i = 0; i < args.length; i++) {
             String arg = args[i].toLowerCase();
             String errorMessage;
+            if (arg.equals("-language")) {
+                errorMessage = "Bad language argument\n";
+                try{
+                    if(argsList.contains(args[i+1])){
+                        printErrorAndExit(errorMessage);
+                    }
+                    _language = Language.valueOf(args[i+1]);
+                    i++;
+                    continue;
+                } catch (IllegalArgumentException e){
+                    System.out.println();
+                    printErrorAndExit("Language can be either 'hebrew' or 'english'\n");
+                }
+            }
             if (arg.equals("-stopwordsfile")) {
                 errorMessage = "Missing stop words file\n";
                 try{
@@ -302,8 +374,29 @@ public class Step1 {
                     printErrorAndExit(errorMessage);
                 }
             }
+            if (arg.equals("-corpuspercentage")) {
+                errorMessage = "Missing corpus percentage\n";
+                try{
+                    if(argsList.contains(args[i+1])){
+                        printErrorAndExit(errorMessage);
+                    }
+                    _corpusPercentage = Double.parseDouble(args[i+1]);
+                    i++;
+                    continue;
+                } catch (IndexOutOfBoundsException e){
+                    System.out.println();
+                    printErrorAndExit(errorMessage);
+                }
+            }
+            if (arg.equals("-compressed")) {
+                _compressed = true;
+                continue;
+            }
         }
 
+        if(_language == null){
+            printErrorAndExit("Argument for language not found\n");
+        }
         if(_stopWordsFile == null){
             printErrorAndExit("Argument for stop words file not found\n");
         }

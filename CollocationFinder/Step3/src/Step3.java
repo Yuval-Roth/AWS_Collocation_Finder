@@ -65,7 +65,7 @@ public class Step3 {
             double npmi = Double.parseDouble(valueTokens[VALUE_NPMI_INDEX]);
             double relNpmi = npmi / npmiTotalInDecade;
 
-            if (relNpmi < relMinPmi || npmi < minPmi) {
+            if (relNpmi < relMinPmi && npmi < minPmi) {
                 return;
             }
 

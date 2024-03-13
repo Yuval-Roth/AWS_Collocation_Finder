@@ -11,11 +11,10 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Reducer;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.*;
 
 public class EMRSimulator {
@@ -30,6 +29,7 @@ public class EMRSimulator {
 
             // Step 1
             Configuration conf = new Configuration();
+            Job job = Job.getInstance(conf, "Step1");
             conf.set("stopWordsFile", "stop_words.txt");
             Map<Long,String> input = makeMapperInput(corpus);
             Step1Mapper step1Mapper = new Step1Mapper(input,conf);
@@ -37,17 +37,27 @@ public class EMRSimulator {
             Step1Reducer step1Reducer = new Step1Reducer(step1Mapper.getOutput(),conf);
             step1Reducer.run();
             String step1Output = step1Reducer.getOutput();
-            System.out.println(step1Output);
+
             // Step 2
-//            input = makeMapperInput(step1Output);
-//            conf = new Configuration();
-//            conf.set("minPmi", "0");
-//            Step2Mapper step2Mapper = new Step2Mapper(input,conf);
-//            step2Mapper.run();
-//            Step2Reducer step2Reducer = new Step2Reducer(step2Mapper.getOutput(),conf);
-//            step2Reducer.run();
-//            String step2Output = step2Reducer.getOutput();
-//            System.out.println(step2Output);
+            input = makeMapperInput(step1Output);
+            conf = new Configuration();
+            Step2Mapper step2Mapper = new Step2Mapper(input,conf);
+            step2Mapper.run();
+            Step2Reducer step2Reducer = new Step2Reducer(step2Mapper.getOutput(),conf);
+            step2Reducer.run();
+            String step2Output = step2Reducer.getOutput();
+
+            // Step 3
+            input = makeMapperInput(step2Output);
+            conf = new Configuration();
+            conf.set("minPmi", "0.5");
+            conf.set("relMinPmi", "0.2");
+            Step3Mapper step3Mapper = new Step3Mapper(input,conf);
+            step3Mapper.run();
+            Step3Reducer step3Reducer = new Step3Reducer(step3Mapper.getOutput(),conf);
+            step3Reducer.run();
+            String step3Output = step3Reducer.getOutput();
+            System.out.println(step3Output);
 
         } catch (Exception e){
             e.printStackTrace();
@@ -232,6 +242,8 @@ public class EMRSimulator {
         }
 
         // <KEY INDEXES>
+        private static final int CACHE_SIZE = 10000;
+        // <KEY INDEXES>
         private static final int DECADE_KEY_INDEX = 0;
         private static final int W1_KEY_INDEX = 1;
         private static final int W2_KEY_INDEX = 2;
@@ -241,8 +253,11 @@ public class EMRSimulator {
         private Text outKey;
         private Text outValue;
 
+//        private LRUCache<String, String> cache;
+
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
+//            cache = new LRUCache<>(CACHE_SIZE);
             outKey = new Text();
             outValue = new Text();
             fs = FileSystem.get(context.getConfiguration());
@@ -259,82 +274,170 @@ public class EMRSimulator {
             String w1 = keyTokens[W1_KEY_INDEX];
             String w2 = keyTokens[W2_KEY_INDEX];
             String countOverall = values[1];
-            String bigramCountInDecade;
-            String w1CountInDecade;
-            String w2CountInDecade;
             Path bigramCountPath = new Path(folderPath, "%s-_-_".formatted(decade));
             Path w1CountPath = new Path(folderPath, "%s-%s-_".formatted(decade, w1));
             Path w2CountPath = new Path(folderPath, "%s-_-%s".formatted(decade, w2));
-//            try(BufferedInputStream reader = new BufferedInputStream(fs.open(bigramCountPath))){
-//                bigramCountInDecade = new String(reader.readAllBytes());
-//            }
-//            try(BufferedInputStream reader = new BufferedInputStream(fs.open(w1CountPath))){
-//                w1CountInDecade = new String(reader.readAllBytes());
-//            }
-//            try(BufferedInputStream reader = new BufferedInputStream(fs.open(w2CountPath))){
-//                w2CountInDecade = new String(reader.readAllBytes());
-//            }
-            bigramCountInDecade = sfs.get(bigramCountPath.toString());
-            w1CountInDecade = sfs.get(w1CountPath.toString());
-            w2CountInDecade = sfs.get(w2CountPath.toString());
 
-            String outKey = values[0];
-            String outValue = "%s,%s,%s,%s".formatted(countOverall,
-                    bigramCountInDecade,w1CountInDecade,w2CountInDecade);
-            context.write(outKey, outValue);
+            double c_w1_w2 = Double.parseDouble(countOverall);
+            double N = Double.parseDouble(getValue(bigramCountPath));
+            double c_w1 = Double.parseDouble(getValue(w1CountPath));
+            double c_w2 = Double.parseDouble(getValue(w2CountPath));
+
+            if(c_w1_w2 == N || Math.log(c_w1_w2/N) == 0.0) {return; /*0 in the denominator*/}
+            if(c_w1 == 1 && c_w2 == 1 && c_w1_w2 == 1) {return;}
+
+            double npmi = calculateNPMI(c_w1_w2, N, c_w1, c_w2);
+
+
+            context.write(decade, "%s,%s,%s".formatted(w1,w2,npmi));
+
+//            outKey.set(decade);
+//            outValue.set("%s,%s,%s".formatted(w1,w2,npmi));
+//            context.write(outKey, outValue);
+        }
+
+        private double calculateNPMI(double c_w1_w2, double N, double c_w1, double c_w2) {
+            double pmi = Math.log(c_w1_w2) + Math.log(N) - Math.log(c_w1) - Math.log(c_w2);
+            return -1 * pmi / Math.log(c_w1_w2 / N);
+        }
+
+        private String getValue(Path path) throws IOException {
+            String value;
+            value = sfs.get(path.toString());
+//            if(cache.contains(path.toString())){
+//                value = cache.get(path.toString());
+//            } else {
+//                BufferedInputStream reader = new BufferedInputStream(fs.open(path));
+//                value = new String(reader.readAllBytes());
+//                reader.close();
+//                cache.put(path.toString(), value);
+//            }
+            return value;
         }
     }
 
-    public static class Step2Reducer extends SimulatedReducer<String,String,String,Double>{
+    public static class Step2Reducer extends SimulatedReducer<String,String,String,String>{
 
         public Step2Reducer(Map<String, Iterable<String>> _input, Configuration _conf) {
             super(_input, _conf);
         }
         // <VALUE INDEXES>
-        private static final int COUNT_OVERALL_VALUE_INDEX = 0;
-        private static final int BIGRAM_COUNT_IN_DECADE_INDEX = 1;
-        private static final int W1_COUNT_IN_DECADE_INDEX = 2;
-        private static final int W2_COUNT_IN_DECADE_INDEX = 3;
-        // </VALUE INDEXES>
-
-        FileSystem fs;
-        DoubleWritable outValue;
-        private double minPmi;
+        private static int NPMI_VALUE_INDEX = 2;
+        private FileSystem fs;
 
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
-            outValue = new DoubleWritable();
             fs = FileSystem.get(context.getConfiguration());
-            minPmi = Double.parseDouble(context.getConfiguration().get("minPmi"));
         }
 
         @Override
         protected void reduce(String key, Iterable<String> values, Context context) throws IOException, InterruptedException {
+
+            Path folderPath = new Path("hdfs:///step3/");
+//            fs.mkdirs(folderPath);
+
+            double npmiTotalInDecade = 0;
             for(String value : values){
-                Double[] valueDoubles = Arrays.stream(value.toString().split(","))
-                        .map(Double::parseDouble)
-                        .toArray(Double[]::new);
-                double npmi = calculateNPMI(
-                        valueDoubles[COUNT_OVERALL_VALUE_INDEX],
-                        valueDoubles[BIGRAM_COUNT_IN_DECADE_INDEX],
-                        valueDoubles[W1_COUNT_IN_DECADE_INDEX],
-                        valueDoubles[W2_COUNT_IN_DECADE_INDEX]);
-
-                if(npmi < minPmi){
-                    continue;
-                }
-//                outValue.set(npmi);
-                context.write(key, npmi);;
+                String[] valueTokens = value.toString().split(",");
+                npmiTotalInDecade += Double.parseDouble(valueTokens[NPMI_VALUE_INDEX]);
+                context.write(key, value);
             }
-        }
 
-        private double calculateNPMI(double c_w1_w2, double N, double c_w1, double c_w2) {
-            double pmi = Math.log(c_w1_w2) + Math.log(N) - Math.log(c_w1) - Math.log(c_w2);
-            System.out.printf("pmi: %f, log: %f%n", pmi, Math.log(c_w1_w2 / N));
-            return -1 * pmi / Math.log(c_w1_w2 / N);
+            sfs.put(key,String.valueOf(npmiTotalInDecade));
+//            Path filePath = new Path(folderPath, key.toString());
+//            boolean success;
+//            do{
+//                try{
+//                    OutputStream s = fs.create(filePath);
+//                    s.write(String.valueOf(npmiTotalInDecade).getBytes());
+//                    s.close();
+//                    success = true;
+//                } catch (IOException e){
+//                    success = false;
+//                }
+//            } while(!success);
         }
     }
 
+    public static class Step3Mapper extends SimulatedMapper<Long,String,String,String> {
+
+        public Step3Mapper(Map<Long, String> _input, Configuration _conf) {
+            super(_input, _conf);
+        }
+        private static final int VALUE_NPMI_INDEX = 2;
+        private static final int CACHE_SIZE = 100;
+        private Text outKey;
+        private Text outValue;
+        private FileSystem fs;
+        private double relMinPmi;
+        private double minPmi;
+//        private LRUCache<String, Double> cache;
+
+
+        @Override
+        protected void setup(Context context) throws IOException, InterruptedException {
+//            cache = new LRUCache<>(CACHE_SIZE);
+            minPmi = Double.parseDouble(context.getConfiguration().get("minPmi"));
+            relMinPmi = Double.parseDouble(context.getConfiguration().get("relMinPmi"));
+            outKey = new Text();
+            outValue = new Text("");
+            fs = FileSystem.get(context.getConfiguration());
+        }
+
+        @Override
+        protected void map(Long key, String value, Context context) throws IOException, InterruptedException {
+            String[] values = value.toString().split("\\s+");
+            String decade = values[0];
+
+            Path folderPath = new Path("hdfs:///step3/");
+            Path filePath = new Path(folderPath, decade);
+
+            double npmiTotalInDecade = 0;
+            npmiTotalInDecade = Double.parseDouble(sfs.get(decade));
+//            if(cache.contains(decade)){
+//                npmiTotalInDecade = cache.get(decade);
+//            } else {
+//                BufferedInputStream reader = new BufferedInputStream(fs.open(filePath));
+//                npmiTotalInDecade = Double.parseDouble(new String(reader.readAllBytes()));
+//                cache.put(decade, npmiTotalInDecade);
+//                reader.close();
+//            }
+
+            String[] valueTokens = value.toString().split(",");
+            double npmi = Double.parseDouble(valueTokens[VALUE_NPMI_INDEX]);
+            double relNpmi = npmi / npmiTotalInDecade;
+
+            if (npmi < minPmi && relNpmi < relMinPmi) {
+                return;
+            }
+            String outKey = "%s %s".formatted(values[0], values[1].replace(",", " "));
+            context.write(outKey, "");
+
+//            outKey.set("%s %s".formatted(values[0], values[1].replace(",", " ")));
+//            context.write(outKey, outValue);
+        }
+    }
+
+    public static class Step3Reducer extends SimulatedReducer<String,String,String,String> {
+
+        @Override
+        protected void setup(Reducer<String, String, String, String>.Context context) throws IOException, InterruptedException {
+
+        }
+
+        @Override
+        protected void reduce(String key, Iterable<String> values, Reducer<String, String, String, String>.Context context) throws IOException, InterruptedException {
+            for(String value : values){
+                context.write(key, value);
+            }
+        }
+
+        public Step3Reducer(Map<String, Iterable<String>> _input, Configuration _conf) {
+            super(_input, _conf);
+        }
+
+
+    }
 
 
     private static Map<Long,String> makeMapperInput(String input) {

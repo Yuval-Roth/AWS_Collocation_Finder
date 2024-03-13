@@ -10,5 +10,7 @@
     <orderEntry type="library" name="apache.hadoop.common" level="project" />
     <orderEntry type="library" name="apache.hadoop.mapreduce.client.core" level="project" />
     <orderEntry type="library" name="amazonaws.aws.java.sdk.s3" level="project" />
+    <orderEntry type="module" module-name="stepUtils" scope="PROVIDED" />
+    <orderEntry type="module" module-name="stepUtils" />
   </component>
 </module>
