@@ -8,10 +8,7 @@ import org.apache.hadoop.security.Credentials;
 
 import java.io.IOException;
 import java.net.URI;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public abstract class SimulatedReducer<KI,VI,KO,VO> extends Reducer<KI, VI, KO, VO> {
 
@@ -19,6 +16,11 @@ public abstract class SimulatedReducer<KI,VI,KO,VO> extends Reducer<KI, VI, KO, 
     private final Context context;
     private final List<String> output;
     private final Configuration conf;
+
+    public String getOutput(Comparator<String> comparator) {
+        output.sort(comparator);
+        return getOutput();
+    }
 
     public String getOutput() {
         StringBuilder output = new StringBuilder();

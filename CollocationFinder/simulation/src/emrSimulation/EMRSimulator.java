@@ -11,6 +11,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Reducer;
 
@@ -56,9 +57,10 @@ public class EMRSimulator {
             conf.set("relMinPmi", "0.2");
             Step3Mapper step3Mapper = new Step3Mapper(input,conf);
             step3Mapper.run();
-            Step3Reducer step3Reducer = new Step3Reducer(step3Mapper.getOutput(),conf);
+            Map<String, Iterable<String>> Step2Output = step3Mapper.getOutput();
+            Step3Reducer step3Reducer = new Step3Reducer(Step2Output,conf);
             step3Reducer.run();
-            String step3Output = step3Reducer.getOutput();
+            String step3Output = step3Reducer.getOutput(new Step3Comparator());
             System.out.println(step3Output);
 
         } catch (Exception e){
@@ -415,7 +417,6 @@ public class EMRSimulator {
         private double minPmi;
 //        private LRUCache<String, Double> cache;
 
-
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
 //            cache = new LRUCache<>(CACHE_SIZE);
@@ -460,6 +461,31 @@ public class EMRSimulator {
         }
     }
 
+    public static class Step3Comparator implements Comparator<String> {
+        private static final int DECADE_INDEX = 0;
+        private static final int W1_INDEX = 1;
+        private static final int W2_INDEX = 2;
+        private static final int NPMI_INDEX = 3;
+        @Override
+        public int compare(String a, String b) {
+            String[] aTokens = a.toString().split("\\s+");
+            String[] bTokens = b.toString().split("\\s+");
+            int num;
+            if((num = aTokens[DECADE_INDEX].compareTo(bTokens[DECADE_INDEX])) != 0){
+                return num;
+            }
+            else if ((num = Double.valueOf(aTokens[NPMI_INDEX]).compareTo(Double.valueOf(bTokens[NPMI_INDEX]))) != 0){
+                return -1 * num;
+            }
+            else if ((num = aTokens[W1_INDEX].compareTo(bTokens[W1_INDEX])) != 0){
+                return num;
+            }
+            else {
+                return aTokens[W2_INDEX].compareTo(bTokens[W2_INDEX]);
+            }
+        }
+    }
+
     public static class Step3Reducer extends SimulatedReducer<String,String,String,String> {
 
         @Override
@@ -477,8 +503,6 @@ public class EMRSimulator {
         public Step3Reducer(Map<String, Iterable<String>> _input, Configuration _conf) {
             super(_input, _conf);
         }
-
-
     }
 
 

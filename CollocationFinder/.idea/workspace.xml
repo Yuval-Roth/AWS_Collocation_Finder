@@ -24,7 +24,7 @@
     <list default="true" id="38712fba-5bfc-473f-a93a-bf4185f68234" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/simulation/src/emrSimulation/EMRSimulator.java" beforeDir="false" afterPath="$PROJECT_DIR$/simulation/src/emrSimulation/EMRSimulator.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/step1/src/Step1.java" beforeDir="false" afterPath="$PROJECT_DIR$/step1/src/Step1.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/simulation/src/emrSimulation/SimulatedReducer.java" beforeDir="false" afterPath="$PROJECT_DIR$/simulation/src/emrSimulation/SimulatedReducer.java" afterDir="false" />
     </list>
     <list id="e1d2580c-fec9-453b-b142-f9bd3ac10412" name="Changes by adidi" comment="" />
     <option name="SHOW_DIALOG" value="false" />
@@ -106,7 +106,7 @@
       <recent name="" />
     </key>
   </component>
-  <component name="RunManager" selected="Application.CollocationFinder">
+  <component name="RunManager" selected="Application.EMRSimulator">
     <configuration name="CollocationFinder" type="Application" factoryName="Application" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="CollocationFinder" />
       <module name="main" />
@@ -195,7 +195,7 @@
       <workItem from="1710316042637" duration="711000" />
       <workItem from="1710316771540" duration="22000" />
       <workItem from="1710316795781" duration="36000" />
-      <workItem from="1710316843943" duration="11959000" />
+      <workItem from="1710316843943" duration="13064000" />
     </task>
     <servers />
   </component>
@@ -223,12 +223,12 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/simulation/src/emrSimulation/EMRSimulator.java</url>
-          <line>451</line>
+          <line>452</line>
           <option name="timeStamp" value="54" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/simulation/src/emrSimulation/EMRSimulator.java</url>
-          <line>30</line>
+          <line>31</line>
           <option name="timeStamp" value="55" />
         </line-breakpoint>
       </breakpoints>
