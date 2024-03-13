@@ -34,7 +34,7 @@ public class Step2 {
         private Text outKey;
         private Text outValue;
 
-        private LRUCache<String, String> cache;
+        private LRUCache<String, Integer> cache;
 
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
@@ -60,9 +60,9 @@ public class Step2 {
             Path w2CountPath = new Path(folderPath, "%s-_-%s".formatted(decade, w2));
 
             double c_w1_w2 = Double.parseDouble(countOverall);
-            double N = Double.parseDouble(getValue(bigramCountPath));
-            double c_w1 = Double.parseDouble(getValue(w1CountPath));
-            double c_w2 = Double.parseDouble(getValue(w2CountPath));
+            double N = getValue(bigramCountPath);
+            double c_w1 = getValue(w1CountPath);
+            double c_w2 = getValue(w2CountPath);
 
             if(c_w1_w2 == N || Math.log(c_w1_w2/N) == 0.0) {return; /*0 in the denominator*/}
             if(c_w1 == 1 && c_w2 == 1 && c_w1_w2 == 1) {return;}
@@ -79,14 +79,22 @@ public class Step2 {
             return -1 * pmi / Math.log(c_w1_w2 / N);
         }
 
-        private String getValue(Path path) throws IOException {
-            String value;
+        private int getValue(Path path) {
+            int value;
             if(cache.contains(path.toString())){
                 value = cache.get(path.toString());
             } else {
-                BufferedInputStream reader = new BufferedInputStream(fs.open(path));
-                value = new String(reader.readAllBytes());
-                reader.close();
+                String str = "";
+                boolean success = false;
+                do{
+                    try{
+                        BufferedInputStream reader = new BufferedInputStream(fs.open(path));
+                        str = new String(reader.readAllBytes());
+                        reader.close();
+                        success = ! str.isBlank();
+                    } catch (IOException ignored){}
+                } while (! success);
+                value = Integer.parseInt(str);
                 cache.put(path.toString(), value);
             }
             return value;

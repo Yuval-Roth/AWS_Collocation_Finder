@@ -51,15 +51,7 @@ public class Step3 {
             Path folderPath = new Path("hdfs:///step3/");
             Path filePath = new Path(folderPath, decade);
 
-            double npmiTotalInDecade = 0;
-            if(cache.contains(decade)){
-                npmiTotalInDecade = cache.get(decade);
-            } else {
-                BufferedInputStream reader = new BufferedInputStream(fs.open(filePath));
-                npmiTotalInDecade = Double.parseDouble(new String(reader.readAllBytes()));
-                cache.put(decade, npmiTotalInDecade);
-                reader.close();
-            }
+            double npmiTotalInDecade = getValue(filePath);
 
             String[] valueTokens = value.toString().split(",");
             double npmi = Double.parseDouble(valueTokens[VALUE_NPMI_INDEX]);
@@ -72,6 +64,28 @@ public class Step3 {
             outKey.set("%s %s".formatted(values[0], values[1].replace(",", " ")));
             context.write(outKey, outValue);
         }
+
+        private double getValue(Path path) {
+            double value;
+                if(cache.contains(path.toString())){
+                    value = cache.get(path.toString());
+                } else {
+                    String str = "";
+                    boolean success = false;
+                    do{
+                        try{
+                            BufferedInputStream reader = new BufferedInputStream(fs.open(path));
+                            str = new String(reader.readAllBytes());
+                            reader.close();
+                            success = ! str.isBlank();
+                        } catch (IOException ignored){}
+                    } while (! success);
+                    value = Double.parseDouble(str);
+                    cache.put(path.toString(), value);
+                }
+            return value;
+        }
+
     }
     public static class DescendingComparator extends WritableComparator {
 

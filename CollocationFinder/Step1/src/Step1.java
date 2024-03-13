@@ -7,7 +7,9 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.RawComparator;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Partitioner;
@@ -34,7 +36,7 @@ public class Step1 {
     private static Path _inputPath;
     private static Path _outputPath;
     private static String _stopWordsFile;
-    private static Boolean _compressed;
+    private static boolean _compressed;
     private static Double _corpusPercentage;
     private static Language _language;
 
@@ -228,16 +230,14 @@ public class Step1 {
                     filePath = new Path(folderPath, "%s-_-%s".formatted(decade,w2));
                 }
 
-                boolean success;
+                boolean success = false;
                 do{
                     try{
                         OutputStream s = fs.create(filePath);
                         s.write(String.valueOf(counter).getBytes());
                         s.close();
                         success = true;
-                    } catch (IOException e){
-                        success = false;
-                    }
+                    } catch (IOException ignored){}
                 } while(!success);
             }
         }
@@ -270,6 +270,37 @@ public class Step1 {
         }
     }
 
+    public static class Step1KeyGrouper extends Text.Comparator{
+
+        private static final int DECADE_INDEX = 0;
+        private static final int W1_INDEX = 1;
+        private static final int W2_INDEX = 2;
+
+        @Override
+        public int compare(WritableComparable a, WritableComparable b) {
+
+            if(a.toString().equals(b.toString())){
+                return 0;
+            }
+
+            String[] aTokens = a.toString().split(",");
+            String[] bTokens = b.toString().split(",");
+
+            String aW1 = aTokens[1];
+            String aW2 = aTokens[2];
+            String bW1 = bTokens[1];
+            String bW2 = bTokens[2];
+
+            if(aW1.equals("*") && bW1.equals("_")){
+                aTokens[1] = "_";
+                if(aW1.equals(bW1))
+                    return -1;
+            }
+
+            return 0;
+        }
+    }
+
     public static void main(String[] args){
         System.out.println("[DEBUG] STEP 1 started!");
         readArgs(args);
@@ -278,7 +309,7 @@ public class Step1 {
         System.out.println("[DEBUG] stop words file: " + _stopWordsFile);
         System.out.println("[DEBUG] language: " + _language);
         System.out.println("[DEBUG] corpus percentage: " + _corpusPercentage);
-        System.out.printf("[DEBUG] compressed: %s%n", _compressed == null ? Boolean.FALSE : _compressed );
+        System.out.printf("[DEBUG] compressed: "+ _compressed );
         Configuration conf = new Configuration();
         conf.set("stopWordsFile", _stopWordsFile);
         conf.set("language", _language.toString());
@@ -296,6 +327,7 @@ public class Step1 {
             job.setMapOutputValueClass(LongWritable.class);
             job.setOutputKeyClass(Text.class);
             job.setOutputValueClass(LongWritable.class);
+//            job.setGroupingComparatorClass();
             if(_compressed) {
                 job.setInputFormatClass(SequenceFileInputFormat.class);
             }

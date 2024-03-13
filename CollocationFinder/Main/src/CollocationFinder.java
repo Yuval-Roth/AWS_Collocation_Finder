@@ -28,9 +28,10 @@ public class CollocationFinder {
     private static Double relMinPmi;
 
     private static final int INSTANCE_COUNT = 9;
-    private static final String LANGUAGE = "english";
-    private static final String STOP_WORDS_FILE = "eng_stop_words.txt";
-    private static final String CORPUS_PERCENTAGE = "0.5";
+    private static final String LANGUAGE = "hebrew";
+    private static final String STOP_WORDS_FILE = "heb_stop_words.txt";
+    private static final String CORPUS_PERCENTAGE = "1.0";
+    private static final boolean compressed = false;
     // </APPLICATION DATA>
 
     public static void main(String[] args) {
@@ -53,7 +54,8 @@ public class CollocationFinder {
 
         List<StepConfig> stepConfigs = new LinkedList<>();
         String[] firstArg = {
-                "-stopWordsFile %s -language %s -corpusPercentage %s".formatted(STOP_WORDS_FILE,LANGUAGE,CORPUS_PERCENTAGE),
+                "-stopWordsFile %s -language %s -corpusPercentage %s %s".formatted(
+                        STOP_WORDS_FILE,LANGUAGE,CORPUS_PERCENTAGE, compressed ? "-compressed" : ""),
                 "",
                 "-relMinPmi %f -minPmi %f".formatted(relMinPmi, minPmi)
         };
