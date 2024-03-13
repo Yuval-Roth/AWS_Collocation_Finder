@@ -51,22 +51,25 @@ public class Step3 {
             Path folderPath = new Path("hdfs:///step3/");
             Path filePath = new Path(folderPath, decade);
 
-            double npmiTotalInDecade = getValue(filePath);
+            try{
+                double npmiTotalInDecade = getValue(filePath);
 
-            String[] valueTokens = value.toString().split(",");
-            double npmi = Double.parseDouble(valueTokens[VALUE_NPMI_INDEX]);
-            double relNpmi = npmi / npmiTotalInDecade;
+                String[] valueTokens = value.toString().split(",");
+                double npmi = Double.parseDouble(valueTokens[VALUE_NPMI_INDEX]);
+                double relNpmi = npmi / npmiTotalInDecade;
 
-            if (relNpmi < relMinPmi && npmi < minPmi) {
-                return;
-            }
+                if (relNpmi < relMinPmi && npmi < minPmi) {
+                    return;
+                }
 
-            outKey.set("%s %s".formatted(values[0], values[1].replace(",", " ")));
-            context.write(outKey, outValue);
+                outKey.set("%s %s".formatted(values[0], values[1].replace(",", " ")));
+                context.write(outKey, outValue);
+            } catch (IllegalStateException ignored){}
         }
 
         private double getValue(Path path) {
             double value;
+            int tries = 0;
                 if(cache.contains(path.toString())){
                     value = cache.get(path.toString());
                 } else {
@@ -78,8 +81,13 @@ public class Step3 {
                             str = new String(reader.readAllBytes());
                             reader.close();
                             success = ! str.isBlank();
-                        } catch (IOException ignored){}
-                    } while (! success);
+                        } catch (IOException ignored){
+                            tries++;
+                        }
+                    } while (! success && tries < 10);
+                    if(tries == 10){
+                        throw new IllegalStateException("Failed to read from file");
+                    }
                     value = Double.parseDouble(str);
                     cache.put(path.toString(), value);
                 }

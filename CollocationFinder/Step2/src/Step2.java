@@ -59,19 +59,22 @@ public class Step2 {
             Path w1CountPath = new Path(folderPath, "%s-%s-_".formatted(decade, w1));
             Path w2CountPath = new Path(folderPath, "%s-_-%s".formatted(decade, w2));
 
-            double c_w1_w2 = Double.parseDouble(countOverall);
-            double N = getValue(bigramCountPath);
-            double c_w1 = getValue(w1CountPath);
-            double c_w2 = getValue(w2CountPath);
+            try{
+                double c_w1_w2 = Double.parseDouble(countOverall);
+                double N = getValue(bigramCountPath);
+                double c_w1 = getValue(w1CountPath);
+                double c_w2 = getValue(w2CountPath);
 
-            if(c_w1_w2 == N || Math.log(c_w1_w2/N) == 0.0) {return; /*0 in the denominator*/}
-            if(c_w1 == 1 && c_w2 == 1 && c_w1_w2 == 1) {return;}
 
-            double npmi = calculateNPMI(c_w1_w2, N, c_w1, c_w2);
+                if(c_w1_w2 == N || Math.log(c_w1_w2/N) == 0.0) {return; /*0 in the denominator*/}
+                if(c_w1 == 1 && c_w2 == 1 && c_w1_w2 == 1) {return;}
 
-            outKey.set(decade);
-            outValue.set("%s,%s,%s".formatted(w1,w2,npmi));
-            context.write(outKey, outValue);
+                double npmi = calculateNPMI(c_w1_w2, N, c_w1, c_w2);
+
+                outKey.set(decade);
+                outValue.set("%s,%s,%s".formatted(w1,w2,npmi));
+                context.write(outKey, outValue);
+            } catch(IllegalStateException ignored){}
         }
 
         private double calculateNPMI(double c_w1_w2, double N, double c_w1, double c_w2) {
@@ -81,6 +84,7 @@ public class Step2 {
 
         private int getValue(Path path) {
             int value;
+            int tries = 0;
             if(cache.contains(path.toString())){
                 value = cache.get(path.toString());
             } else {
@@ -92,8 +96,13 @@ public class Step2 {
                         str = new String(reader.readAllBytes());
                         reader.close();
                         success = ! str.isBlank();
-                    } catch (IOException ignored){}
-                } while (! success);
+                    } catch (IOException ignored){
+                        tries++;
+                    }
+                } while (! success && tries < 10);
+                if(tries == 10){
+                    throw new IllegalStateException("Too many tries to read from file");
+                }
                 value = Integer.parseInt(str);
                 cache.put(path.toString(), value);
             }
