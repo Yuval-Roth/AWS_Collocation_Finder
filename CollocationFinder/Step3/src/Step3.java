@@ -1,16 +1,12 @@
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.WritableComparable;
-import org.apache.hadoop.io.WritableComparator;
+import org.apache.hadoop.io.*;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
-import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
@@ -23,70 +19,89 @@ public class Step3 {
     private static Double _minPmi;
 
     public static class Step3Mapper extends Mapper<LongWritable, Text, Text, Text> {
-        private static final int VALUE_NPMI_INDEX = 2;
-        private static final int CACHE_SIZE = 100;
         private Text outKey;
         private Text outValue;
-        private FileSystem fs;
-        private double relMinPmi;
-        private double minPmi;
-        private LRUCache<String, Double> cache;
-
+        private static final int KEY_DECADE_INDEX = 0;
+        private static final int KEY_W1_INDEX = 1;
+        private static final int KEY_W2_INDEX = 2;
 
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
-            cache = new LRUCache<>(CACHE_SIZE);
-            minPmi = Double.parseDouble(context.getConfiguration().get("minPmi"));
-            relMinPmi = Double.parseDouble(context.getConfiguration().get("relMinPmi"));
             outKey = new Text();
-            outValue = new Text("");
-            fs = FileSystem.get(context.getConfiguration());
+            outValue = new Text();
         }
 
         @Override
         protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
             String[] values = value.toString().split("\\s+");
-            String decade = values[0];
 
-            Path folderPath = new Path("hdfs:///step3/");
-            Path filePath = new Path(folderPath, decade);
+            String[] keyTokens = values[0].split(",");
 
-            double npmiTotalInDecade = getValue(filePath);
+            String decade = keyTokens[KEY_DECADE_INDEX];
+            String w1 = keyTokens[KEY_W1_INDEX];
+            String w2 = keyTokens[KEY_W2_INDEX];
+            double npmi = Double.parseDouble(values[1]);
 
-            String[] valueTokens = value.toString().split(",");
-            double npmi = Double.parseDouble(valueTokens[VALUE_NPMI_INDEX]);
-            double relNpmi = npmi / npmiTotalInDecade;
-
-            if (relNpmi < relMinPmi && npmi < minPmi) {
-                return;
-            }
-
-            outKey.set("%s %s".formatted(values[0], values[1].replace(",", " ")));
+            outKey.set("%s,_,_,_".formatted(decade));
+            outValue.set(String.valueOf(npmi));
+            context.write(outKey, outValue);
+            outKey.set("%s,%s,%s,%s".formatted(decade,w1,w2,npmi));
+            outValue.set("");
             context.write(outKey, outValue);
         }
+    }
 
-        private double getValue(Path path) {
-            double value;
-                if(cache.contains(path.toString())){
-                    value = cache.get(path.toString());
-                } else {
-                    String str = "";
-                    boolean success = false;
-                    do{
-                        try{
-                            BufferedInputStream reader = new BufferedInputStream(fs.open(path));
-                            str = new String(reader.readAllBytes());
-                            reader.close();
-                            success = ! str.isBlank();
-                        } catch (IOException ignored){}
-                    } while (! success);
-                    value = Double.parseDouble(str);
-                    cache.put(path.toString(), value);
-                }
-            return value;
+    public static class Step3Reducer extends Reducer<Text,Text,Text,Text> {
+
+        private static final int KEY_DECADE_INDEX = 0;
+        private static final int KEY_W1_INDEX = 1;
+        private static final int KEY_W2_INDEX = 2;
+        private static final int KEY_NPMI_INDEX = 3;
+        Text outKey;
+        Text outValue;
+        String currentDecade;
+        private double totalNpmiInDecade;
+        private double relMinPmi;
+        private double minPmi;
+
+        @Override
+        protected void setup(Context context) throws IOException, InterruptedException {
+            relMinPmi = context.getConfiguration().getDouble("relMinPmi", 0.2);
+            minPmi = context.getConfiguration().getDouble("minPmi", 0.5);
+            outKey = new Text();
+            outValue = new Text("");
         }
 
+        @Override
+        protected void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
+            String[] keyTokens = key.toString().split(",");
+            String decade = keyTokens[KEY_DECADE_INDEX];
+
+            if(currentDecade == null || !currentDecade.equals(decade)){
+                currentDecade = decade;
+            }
+
+            if(keyTokens[KEY_NPMI_INDEX].equals("_")){
+                for (Text value : values){
+                    totalNpmiInDecade += Double.parseDouble(value.toString());
+                }
+            } else {
+                for (Text value : values) {
+                    double npmi = Double.parseDouble(value.toString());
+                    double relNpmi = npmi / totalNpmiInDecade;
+
+                    if(npmi < minPmi && relNpmi < relMinPmi){
+                        continue;
+                    }
+
+                    outKey.set("%s".formatted(key.toString().replaceAll(","," ")));
+                    context.write(outKey, outValue);
+                }
+            }
+        }
     }
+
+
     public static class DescendingComparator extends WritableComparator {
 
         private static final int DECADE_INDEX = 0;
@@ -100,11 +115,20 @@ public class Step3 {
 
         @Override
         public int compare(WritableComparable a, WritableComparable b) {
-            String[] aTokens = a.toString().split("\\s+");
-            String[] bTokens = b.toString().split("\\s+");
+            String[] aTokens = a.toString().split(",");
+            String[] bTokens = b.toString().split(",");
             int num;
             if((num = aTokens[DECADE_INDEX].compareTo(bTokens[DECADE_INDEX])) != 0){
                 return num;
+            }
+            else if(aTokens[NPMI_INDEX].equals("_") && bTokens[NPMI_INDEX].equals("_")){
+                return 0;
+            }
+            else if(aTokens[NPMI_INDEX].equals("_")){
+                return -1;
+            }
+            else if(bTokens[NPMI_INDEX].equals("_")){
+                return 1;
             }
             else if ((num = Double.valueOf(aTokens[NPMI_INDEX]).compareTo(Double.valueOf(bTokens[NPMI_INDEX]))) != 0){
                 return -1 * num;

@@ -4,12 +4,11 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.S3Object;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.RawComparator;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
+import org.apache.hadoop.io.WritableComparator;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Partitioner;
@@ -19,7 +18,6 @@ import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -40,14 +38,7 @@ public class Step1 {
     private static Double _corpusPercentage;
     private static Language _language;
 
-    /**
-     * emits the following format:
-     *  decade,w1,w2 -> count_overall
-     *  decade,w1,_ -> count_overall
-     *  decade,_,w2 -> count_overall
-     *  decade,_,_ -> count_overall
-     */
-    public static class Step1Mapper extends Mapper<LongWritable, Text, Text, Text> {
+    public static class Step1Mapper extends Mapper<LongWritable, Text, Text, LongWritable> {
 
         private static final String BUCKET_NAME = "distributed-systems-2024-bucket-yuval-adi";
         private static final int W1_INDEX = 0;
@@ -59,7 +50,7 @@ public class Step1 {
         private static final String ENGLISH_CHARS = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz";
         private Set<String> stopWords;
         private AmazonS3 s3;
-        private Text outValue;
+        private LongWritable outValue;
         private Text outKey;
         private double corpusPercentage;
         private String wordChars;
@@ -101,19 +92,16 @@ public class Step1 {
             String w1 = tokens[W1_INDEX];
             String w2 = tokens[W2_INDEX];
 
-            outValue.set("%s,%s,%s".formatted(w1,w2,tokens[COUNT_OVERALL_INDEX]));
-            outKey.set("%s,%s,%s".formatted(decade,w1,w2));
+            outValue.set(Long.parseLong(tokens[COUNT_OVERALL_INDEX]));
+            outKey.set("%s,_,_".formatted(decade));
             context.write(outKey, outValue);
             outKey.set("%s,%s,_".formatted(decade,w1));
             context.write(outKey, outValue);
-            outKey.set("%s,_,%s".formatted(decade,w2));
-            context.write(outKey, outValue);
-            outKey.set("%s,_,_".formatted(decade));
+            outKey.set("%s,%s,%s".formatted(decade,w1,w2));
             context.write(outKey, outValue);
         }
 
         private boolean isMalformedInput(String[] tokens) {
-
             return tokens.length < 5 ||
                     isInvalidNumber(tokens[DECADE_INDEX]) ||
                     isInvalidNumber(tokens[COUNT_OVERALL_INDEX]) ||
@@ -122,7 +110,6 @@ public class Step1 {
         }
 
         private  boolean isInvalidWord(String w) {
-
             char[] _w = w.toCharArray();
             for (int i = 0; i < w.length(); i++) {
                 if(wordChars.indexOf(_w[i]) == -1){
@@ -145,7 +132,7 @@ public class Step1 {
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
             outKey = new Text();
-            outValue = new Text();
+            outValue = new LongWritable();
 
             // get configuration
             Configuration conf = context.getConfiguration();
@@ -178,17 +165,48 @@ public class Step1 {
         }
     }
 
+    public static class Step1Comparator extends WritableComparator {
+
+        private static final int DECADE_INDEX = 0;
+        private static final int W1_INDEX = 1;
+        private static final int W2_INDEX = 2;
+
+        Step1Comparator() {
+            super(Text.class, true);
+        }
+
+        @Override
+        public int compare(WritableComparable a, WritableComparable b) {
+            String[] aTokens = a.toString().split("\\s+");
+            String[] bTokens = b.toString().split("\\s+");
+            int num;
+            if((num = aTokens[DECADE_INDEX].compareTo(bTokens[DECADE_INDEX])) != 0){
+                return num;
+            }
+            else if ((num = aTokens[W1_INDEX].compareTo(bTokens[W1_INDEX])) != 0){
+                return num;
+            }
+            else {
+                return aTokens[W2_INDEX].compareTo(bTokens[W2_INDEX]);
+            }
+        }
+    }
+
     /**
      * emits the following format:
      *    decade,w1,w2 -> w1,w2,count_overall,bigram_count_in_decade
      */
-    public static class Step1Reducer extends Reducer<Text, Text, Text, Text> {
+    public static class Step1Reducer extends Reducer<Text, LongWritable, Text, Text> {
 
         private static final int KEY_DECADE_INDEX = 0;
         private static final int KEY_W1_INDEX = 1;
         private static final int KEY_W2_INDEX = 2;
         Text outkey;
         Text outValue;
+        String currentW1;
+        long c_w1;
+        String currentDecade;
+        long N;
 
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
@@ -197,17 +215,47 @@ public class Step1 {
         }
 
         @Override
-        protected void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
-            long counter = 0;
-            for (Text value : values) {
-                String[] valueTokens = value.toString().split(",");
+        protected void reduce(Text key, Iterable<LongWritable> values, Context context) throws IOException, InterruptedException {
+            String[] keyTokens = key.toString().split(",");
+            String decade = keyTokens[KEY_DECADE_INDEX];
+            String w1 = keyTokens[KEY_W1_INDEX];
+            String w2 = keyTokens[KEY_W2_INDEX];
 
-                counter += Long.parseLong(valueTokens[2]);
-                context.write(key,value);
+            if(currentDecade == null || !currentDecade.equals(decade)){
+                currentDecade = decade;
+                currentW1 = null;
+                N = 0;
             }
-            outkey.set(key.toString().replace("_","*"));
-            outValue.set(String.valueOf(counter));
-            context.write(outkey,outValue);
+            if(currentW1 == null || !currentW1.equals(w1)){
+                currentW1 = w1;
+                c_w1 = 0;
+            }
+
+            long counter = 0;
+
+            // count N in decade
+            if(w1.equals("_") && w2.equals("_")) {
+                for (LongWritable value : values) {
+                    counter += value.get();
+                }
+                N = counter;
+            }
+            // count c_w1 in decade
+            else if(w2.equals("_")) {
+                for (LongWritable value : values) {
+                    counter += value.get();
+                }
+                c_w1 = counter;
+            }
+            // count c_w1_w2 in decade
+            else {
+                for (LongWritable value : values) {
+                    counter += value.get();
+                }
+                outkey.set("%s,%s,%s".formatted(decade,w1,w2));
+                outValue.set("%s,%s,%s".formatted(counter,N,c_w1));
+                context.write(outkey, outValue);
+            }
         }
     }
 
@@ -238,6 +286,7 @@ public class Step1 {
             job.setJarByClass(Step1.class);
             job.setMapperClass(Step1Mapper.class);
             job.setPartitionerClass(Step1Partitioner.class);
+            job.setSortComparatorClass(Step1Comparator.class);
             job.setReducerClass(Step1Reducer.class);
             job.setMapOutputKeyClass(Text.class);
             job.setMapOutputValueClass(LongWritable.class);
