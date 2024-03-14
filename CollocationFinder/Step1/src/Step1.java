@@ -216,6 +216,25 @@ public class Step1 {
         }
     }
 
+    public static class Step1Combiner extends Reducer<Text,LongWritable,Text,LongWritable>{
+        LongWritable outValue;
+
+        @Override
+        protected void setup(Context context) throws IOException, InterruptedException {
+            outValue = new LongWritable();
+        }
+
+        @Override
+        protected void reduce(Text key, Iterable<LongWritable> values, Context context) throws IOException, InterruptedException {
+            long counter = 0;
+            for (LongWritable value : values) {
+                counter += value.get();
+            }
+            outValue.set(counter);
+            context.write(key, outValue);
+        }
+    }
+
     public static class Step1Partitioner extends Partitioner<Text, LongWritable> {
         public int getPartition(Text key, LongWritable value, int numPartitions) {
             String[] keyTokens = key.toString().split(",");
@@ -245,6 +264,7 @@ public class Step1 {
             job.setPartitionerClass(Step1Partitioner.class);
             job.setSortComparatorClass(Step1Comparator.class);
             job.setReducerClass(Step1Reducer.class);
+            job.setCombinerClass(Step1Combiner.class);
             job.setMapOutputKeyClass(Text.class);
             job.setMapOutputValueClass(LongWritable.class);
             job.setOutputKeyClass(Text.class);

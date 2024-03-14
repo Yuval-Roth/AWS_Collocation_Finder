@@ -9,6 +9,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -98,6 +99,35 @@ public class Step3 {
         }
     }
 
+    public static class Step3Combiner extends Reducer<Text,Text,Text,Text> {
+        private static final int KEY_NPMI_INDEX = 3;
+        Text outKey;
+        Text outValue;
+
+        @Override
+        protected void setup(Context context) throws IOException, InterruptedException {
+            outKey = new Text();
+            outValue = new Text("");
+        }
+
+        @Override
+        protected void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
+            String[] keyTokens = key.toString().split(",");
+
+            double counter = 0;
+            if(keyTokens[KEY_NPMI_INDEX].equals("_")){
+                for (Text value : values){
+                    counter += Double.parseDouble(value.toString());
+                }
+                outValue.set(String.valueOf(counter));
+            } else {
+                outValue.set("");
+            }
+            context.write(key, outValue);
+        }
+    }
+
+
     public static class Step3Partitioner extends Partitioner<Text, Text> {
         public int getPartition(Text key, Text value, int numPartitions) {
             String[] keyTokens = key.toString().split(",");
@@ -162,6 +192,7 @@ public class Step3 {
             job.setSortComparatorClass(Step3Comparator.class);
             job.setPartitionerClass(Step3Partitioner.class);
             job.setReducerClass(Step3Reducer.class);
+            job.setCombinerClass(Step3Combiner.class);
             job.setMapOutputKeyClass(Text.class);
             job.setMapOutputValueClass(Text.class);
             job.setOutputKeyClass(Text.class);

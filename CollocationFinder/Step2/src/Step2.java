@@ -47,8 +47,6 @@ public class Step2 {
 
 
             outValue.set(values[1]);
-            outKey.set("%s,_,_".formatted(decade));
-            context.write(outKey, outValue);
             outKey.set("%s,%s,_".formatted(decade,w2));
             context.write(outKey, outValue);
             outKey.set("%s,%s,%s".formatted(decade,w2,w1));
@@ -98,12 +96,8 @@ public class Step2 {
 
             long counter = 0;
 
-            // Don't count N in decade
-            if(w1.equals("_") && w2.equals("_")) {
-                return;
-            }
             // count c_w2 in decade
-            else if(w2.equals("_")) {
+            if(w2.equals("_")) {
                 for (Text value : values) {
                     String[] valueTokens = value.toString().split(",");
                     counter += Long.parseLong(valueTokens[VALUE_C_W1_W2_INDEX]);
@@ -148,6 +142,51 @@ public class Step2 {
         }
     }
 
+    public static class Step2Combiner extends Reducer<Text, Text, Text, Text>{
+        private static final int KEY_W2_INDEX = 2;
+        private static final int VALUE_C_W1_W2_INDEX = 0;
+        private static final int VALUE_N_INDEX = 1;
+        private static final int VALUE_C_W1_INDEX = 2;
+
+        Text outValue;
+
+        @Override
+        protected void setup(Context context) throws IOException, InterruptedException {
+            outValue = new Text();
+        }
+
+        @Override
+        protected void reduce(Text key, Iterable<Text> values, Context context) throws IOException, InterruptedException {
+            String[] keyTokens = key.toString().split(",");
+            String w2 = keyTokens[KEY_W2_INDEX];
+
+            long counter = 0;
+
+            // count c_w2 in decade
+            Iterator<Text> valuesIterator = values.iterator();
+            if(w2.equals("_")) {
+                String[] valueTokens = valuesIterator.next().toString().split(",");
+                counter += Long.parseLong(valueTokens[VALUE_C_W1_W2_INDEX]);
+                while(valuesIterator.hasNext()){
+                    valueTokens = valuesIterator.next().toString().split(",");
+                    counter += Long.parseLong(valueTokens[VALUE_C_W1_W2_INDEX]);
+                }
+                outValue.set("%d,%s,%s".formatted(counter,valueTokens[VALUE_N_INDEX],valueTokens[VALUE_C_W1_INDEX]));
+                context.write(key, outValue);
+            }
+            // emit c_w1_w2 in decade
+            else {
+                Text value = valuesIterator.next();
+                context.write(key,value);
+
+                // should be only one value
+                if(valuesIterator.hasNext()){
+                    throw new RuntimeException("More than one value for key: %s".formatted(key));
+                }
+            }
+        }
+    }
+
     public static class Step2Comparator extends WritableComparator {
 
         private static final int DECADE_INDEX = 0;
@@ -188,6 +227,7 @@ public class Step2 {
             job.setSortComparatorClass(Step2Comparator.class);
             job.setPartitionerClass(Step2Partitioner.class);
             job.setReducerClass(Step2Reducer.class);
+            job.setCombinerClass(Step2Combiner.class);
             job.setMapOutputKeyClass(Text.class);
             job.setMapOutputValueClass(Text.class);
             job.setOutputKeyClass(Text.class);
