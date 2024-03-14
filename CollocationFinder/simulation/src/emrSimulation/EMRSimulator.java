@@ -77,15 +77,11 @@ public class EMRSimulator {
         private static final int W2_INDEX = 1;
         private static final int DECADE_INDEX = 2;
         private static final int COUNT_OVERALL_INDEX = 3;
-        private static final String NUMBERS = "0123456789";
-        private static final String HEBREW_CHARS = "קראטוןםפשדגכעיחלךףזסבהנמצתץ";
-        private static final String ENGLISH_CHARS = "AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz";
         private Set<String> stopWords;
         private AmazonS3 s3;
         private LongWritable outValue;
         private Text outKey;
         private double corpusPercentage;
-        private String wordChars;
         private Language language;
 
         @Override
@@ -95,29 +91,21 @@ public class EMRSimulator {
             }
             String[] tokens = value.toString().split("\\s+");
 
-            // remove tags from words if they exist
-            int index;
-            if ((index = tokens[W1_INDEX].indexOf("_")) != -1){
-                tokens[W1_INDEX] = tokens[W1_INDEX].substring(0,index).trim();
-            }
-            if ((index = tokens[W2_INDEX].indexOf("_")) != -1){
-                tokens[W2_INDEX] = tokens[W2_INDEX].substring(0,index).trim();
-            }
-
-            // skip empty words
-            if(tokens[W1_INDEX].isEmpty() || tokens[W2_INDEX].isEmpty()){
-                return;
-            }
-
             if(language == Language.english){
                 tokens[W1_INDEX] = tokens[W1_INDEX].toLowerCase();
                 tokens[W2_INDEX] = tokens[W2_INDEX].toLowerCase();
+
+                if(!tokens[W1_INDEX].matches("[a-z]*") || !tokens[W2_INDEX].matches("[a-z]*")){
+                    return;
+                }
+            } else {
+                if(!tokens[W1_INDEX].matches("[א-ת]*") || !tokens[W2_INDEX].matches("[א-ת]*")){
+                    return;
+                }
             }
 
-            // skip bad input and stop words
-            if (isMalformedInput(tokens) ||
-                    stopWords.contains(tokens[W1_INDEX]) ||
-                    stopWords.contains(tokens[W2_INDEX])) {return;}
+            // skip stop words
+            if (stopWords.contains(tokens[W1_INDEX]) || stopWords.contains(tokens[W2_INDEX])) {return;}
 
             String decade = tokens[DECADE_INDEX];
             decade = decade.substring(0, decade.length() - 1) + "0";
@@ -133,34 +121,6 @@ public class EMRSimulator {
             context.write(outKey, outValue);
         }
 
-        private boolean isMalformedInput(String[] tokens) {
-            return tokens.length < 5 ||
-                    isInvalidNumber(tokens[DECADE_INDEX]) ||
-                    isInvalidNumber(tokens[COUNT_OVERALL_INDEX]) ||
-                    isInvalidWord(tokens[W1_INDEX]) ||
-                    isInvalidWord(tokens[W2_INDEX]);
-        }
-
-        private  boolean isInvalidWord(String w) {
-            char[] _w = w.toCharArray();
-            for (int i = 0; i < w.length(); i++) {
-                if(wordChars.indexOf(_w[i]) == -1){
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        private boolean isInvalidNumber(String w) {
-            char[] _w = w.toCharArray();
-            for (int i = 0; i < w.length(); i++) {
-                if(NUMBERS.indexOf(_w[i]) == -1){
-                    return true;
-                }
-            }
-            return false;
-        }
-
         @Override
         protected void setup(Context context) throws IOException, InterruptedException {
             outKey = new Text();
@@ -171,9 +131,6 @@ public class EMRSimulator {
             corpusPercentage = conf.getDouble("corpusPercentage", 1.0);
             language = Language.valueOf(conf.get("language"));
             String stopWordsFile = conf.get("stopWordsFile");
-
-            // optimize for wordChars
-            wordChars = language == Language.english ? ENGLISH_CHARS : HEBREW_CHARS;
 
             s3 = AmazonS3Client.builder().withRegion(Regions.US_WEST_2).build();
             String stopWordsStr = downloadSmallFileFromS3(stopWordsFile);
