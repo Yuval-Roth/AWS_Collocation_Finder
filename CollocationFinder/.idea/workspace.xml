@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ArtifactsWorkspaceSettings">
     <artifacts-to-build>
-      <artifact name="OutputCombiner:jar" />
+      <artifact name="Top10Maker:jar" />
     </artifacts-to-build>
   </component>
   <component name="AutoImportSettings">
@@ -20,14 +20,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="38712fba-5bfc-473f-a93a-bf4185f68234" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/artifacts/OutputCombiner_jar.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Main/src/CollocationFinder.java" beforeDir="false" afterPath="$PROJECT_DIR$/Main/src/CollocationFinder.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Main/src/META-INF/MANIFEST.MF" beforeDir="false" afterPath="$PROJECT_DIR$/Main/src/META-INF/MANIFEST.MF" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/OutputCombiner/src/Combiner.java" beforeDir="false" afterPath="$PROJECT_DIR$/OutputCombiner/src/Top10Maker.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/OutputCombiner/src/META-INF/MANIFEST.MF" beforeDir="false" afterPath="$PROJECT_DIR$/OutputCombiner/src/META-INF/MANIFEST.MF" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Step1/src/META-INF/MANIFEST.MF" beforeDir="false" afterPath="$PROJECT_DIR$/Step1/src/META-INF/MANIFEST.MF" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Step2/src/META-INF/MANIFEST.MF" beforeDir="false" afterPath="$PROJECT_DIR$/Step2/src/META-INF/MANIFEST.MF" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Step3/src/META-INF/MANIFEST.MF" beforeDir="false" afterPath="$PROJECT_DIR$/Step3/src/META-INF/MANIFEST.MF" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/simulation/src/emrSimulation/EMRSimulator.java" beforeDir="false" afterPath="$PROJECT_DIR$/simulation/src/emrSimulation/EMRSimulator.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/META-INF/MANIFEST.MF" beforeDir="false" afterPath="$PROJECT_DIR$/src/META-INF/MANIFEST.MF" afterDir="false" />
     </list>
     <list id="e1d2580c-fec9-453b-b142-f9bd3ac10412" name="Changes by adidi" comment="" />
@@ -60,51 +60,51 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Application.CollocationFinder.executor&quot;: &quot;Run&quot;,
-    &quot;Application.Combiner.executor&quot;: &quot;Debug&quot;,
-    &quot;Application.EMRSimulator.executor&quot;: &quot;Run&quot;,
-    &quot;Application.LRUCache.executor&quot;: &quot;Run&quot;,
-    &quot;Application.Step1.executor&quot;: &quot;Run&quot;,
-    &quot;Application.Step2.executor&quot;: &quot;Debug&quot;,
-    &quot;Downloaded.Files.Path.Enabled&quot;: &quot;false&quot;,
-    &quot;Repository.Attach.Annotations&quot;: &quot;false&quot;,
-    &quot;Repository.Attach.JavaDocs&quot;: &quot;false&quot;,
-    &quot;Repository.Attach.Sources&quot;: &quot;false&quot;,
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
-    &quot;extract.method.default.visibility&quot;: &quot;private&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
-    &quot;jdk.selected.JAVA_MODULE&quot;: &quot;corretto-17&quot;,
-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/Yuval/git/Distributed_systems_assignment_2/CollocationFinder&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;onboarding.tips.debug.path&quot;: &quot;C:/Users/Yuval/git/Distributed_systems_assignment_2/CollocationFinder/OutputCombiner/src/Main.java&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Artifacts&quot;,
-    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
-    &quot;project.structure.side.proportion&quot;: &quot;0.3402299&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;project.propVCSSupport.DirectoryMappings&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Application.CollocationFinder.executor": "Run",
+    "Application.Combiner.executor": "Debug",
+    "Application.EMRSimulator.executor": "Run",
+    "Application.LRUCache.executor": "Run",
+    "Application.Step1.executor": "Run",
+    "Application.Step2.executor": "Debug",
+    "Downloaded.Files.Path.Enabled": "false",
+    "Repository.Attach.Annotations": "false",
+    "Repository.Attach.JavaDocs": "false",
+    "Repository.Attach.Sources": "false",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "extract.method.default.visibility": "private",
+    "git-widget-placeholder": "main",
+    "ignore.virus.scanning.warn.message": "true",
+    "jdk.selected.JAVA_MODULE": "corretto-17",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "C:/Users/Yuval/git/Distributed_systems_assignment_2/CollocationFinder/out/production",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "onboarding.tips.debug.path": "C:/Users/Yuval/git/Distributed_systems_assignment_2/CollocationFinder/OutputCombiner/src/Main.java",
+    "project.structure.last.edited": "Artifacts",
+    "project.structure.proportion": "0.15",
+    "project.structure.side.proportion": "0.3402299",
+    "settings.editor.selected.configurable": "project.propVCSSupport.DirectoryMappings",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
-      <recent name="C:\Users\Yuval\git\Distributed_systems_assignment_2\CollocationFinder" />
       <recent name="C:\Users\Yuval\git\Distributed_systems_assignment_2\CollocationFinder\out\production" />
+      <recent name="C:\Users\Yuval\git\Distributed_systems_assignment_2\CollocationFinder" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\Yuval\git\Distributed_systems_assignment_2\CollocationFinder\out" />
       <recent name="C:\Users\Yuval\git\Distributed_systems_assignment_2\CollocationFinder\out\production" />
       <recent name="C:\Users\Yuval\git\Distributed_systems_assignment_2\CollocationFinder" />
       <recent name="C:\Users\Yuval\git\Distributed_systems_assignment_2\CollocationFinder\out\artifacts" />
       <recent name="C:\Users\Yuval\git\Distributed_systems_assignment_2\CollocationFinder\Job4\src" />
-      <recent name="C:\Users\Yuval\git\Distributed_systems_assignment_2\CollocationFinder\Job3\src" />
     </key>
     <key name="MoveInnerDialog.RECENTS_KEY">
       <recent name="" />
@@ -113,18 +113,11 @@
       <recent name="" />
     </key>
   </component>
-  <component name="RunManager" selected="Application.CollocationFinder">
+  <component name="RunManager" selected="Application.Top10Maker">
     <configuration name="CollocationFinder" type="Application" factoryName="Application" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="CollocationFinder" />
       <module name="main" />
       <option name="PROGRAM_PARAMETERS" value="-minpmi 0.5 -relminpmi 0.2 -inputurl s3://datasets.elasticmapreduce/ngrams/books/20090715/heb-all/2gram/data" />
-      <method v="2">
-        <option name="Make" enabled="true" />
-      </method>
-    </configuration>
-    <configuration name="Combiner" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="Combiner" />
-      <module name="OutputCombiner" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -171,17 +164,25 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="Top10Maker" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="Top10Maker" />
+      <module name="OutputCombiner" />
+      <option name="PROGRAM_PARAMETERS" value="0.999" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <list>
       <item itemvalue="Application.EMRSimulator" />
       <item itemvalue="Application.CollocationFinder" />
-      <item itemvalue="Application.Combiner" />
+      <item itemvalue="Application.Top10Maker" />
       <item itemvalue="Application.LRUCache" />
       <item itemvalue="Application.Step2" />
       <item itemvalue="Application.Step1" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Application.Combiner" />
+        <item itemvalue="Application.Top10Maker" />
         <item itemvalue="Application.Step1" />
         <item itemvalue="Application.LRUCache" />
         <item itemvalue="Application.Step2" />
@@ -215,7 +216,8 @@
       <workItem from="1710361981172" duration="5789000" />
       <workItem from="1710420394814" duration="48000" />
       <workItem from="1710420455001" duration="2223000" />
-      <workItem from="1710422954110" duration="1284000" />
+      <workItem from="1710422954110" duration="3485000" />
+      <workItem from="1710427889144" duration="795000" />
     </task>
     <servers />
   </component>
@@ -256,6 +258,16 @@
           <url>file://$PROJECT_DIR$/simulation/src/emrSimulation/SimulatedReducer.java</url>
           <line>48</line>
           <option name="timeStamp" value="9" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/OutputCombiner/src/Top10Maker.java</url>
+          <line>42</line>
+          <option name="timeStamp" value="11" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/OutputCombiner/src/Top10Maker.java</url>
+          <line>26</line>
+          <option name="timeStamp" value="12" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

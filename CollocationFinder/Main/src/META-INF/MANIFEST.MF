@@ -1,3 +1,3 @@
 Manifest-Version: 1.0
-Combiner-Class: CollocationFinder
+Top10Maker-Class: CollocationFinder
 

@@ -4,24 +4,31 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
-public class Combiner {
+public class Top10Maker {
 
     public static void main (String[] args) throws Exception{
+
+        if(args.length != 1){
+            System.out.println("Usage: <threshold>");
+            return;
+        }
 
         Map<String,Integer> decadesCounter = new HashMap();
         TreeMap<String,String> map = new TreeMap<>(new Comparator());
 
         String folderPath = getFolderPath();
         String[] itemsInFolder = Arrays.stream(new File(folderPath).list())
-                .filter(s -> ! s.startsWith("OutputCombiner"))
+                .filter(s -> ! s.startsWith("Top10Maker") && ! s.startsWith("combined_output"))
                 .toArray(String[]::new);
+
+        double threshold = Double.parseDouble(args[0]);
 
         for(String item : itemsInFolder){
             try(BufferedReader reader = new BufferedReader(new FileReader(folderPath + item))){
                 String line;
                 while((line = reader.readLine()) != null){
                     String[] tokens = line.split(" ");
-                    if( Double.parseDouble(tokens[3]) > 1.0) continue;
+                    if(Double.parseDouble(tokens[3]) > threshold) continue;
                     if(tokens[1].equals(tokens[2])) continue;
                     int count = decadesCounter.getOrDefault(tokens[0],0);
                     if(count > 10){
@@ -43,7 +50,7 @@ public class Combiner {
 
 
     private static String getFolderPath() {
-        String folderPath = Combiner.class.getResource("Combiner.class").getPath();
+        String folderPath = Top10Maker.class.getResource("Top10Maker.class").getPath();
         folderPath = folderPath.replace("%20"," "); //fix space character
         folderPath = folderPath.substring(folderPath.indexOf("/")+1); // remove initial '/'
         folderPath = folderPath.substring(0,folderPath.lastIndexOf("/")); // remove .class file from path
