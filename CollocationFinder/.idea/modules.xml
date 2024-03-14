@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/CollocationFinder.iml" filepath="$PROJECT_DIR$/CollocationFinder.iml" />
+      <module fileurl="file://$PROJECT_DIR$/OutputCombiner/OutputCombiner.iml" filepath="$PROJECT_DIR$/OutputCombiner/OutputCombiner.iml" />
       <module fileurl="file://$PROJECT_DIR$/main/main.iml" filepath="$PROJECT_DIR$/main/main.iml" />
       <module fileurl="file://$PROJECT_DIR$/simulation/simulation.iml" filepath="$PROJECT_DIR$/simulation/simulation.iml" />
       <module fileurl="file://$PROJECT_DIR$/step1/step1.iml" filepath="$PROJECT_DIR$/step1/step1.iml" />

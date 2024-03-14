@@ -134,6 +134,7 @@ public class EMRSimulator {
 
             s3 = AmazonS3Client.builder().withRegion(Regions.US_WEST_2).build();
             String stopWordsStr = downloadSmallFileFromS3(stopWordsFile);
+            System.out.println("Stop words downloaded");
             stopWords = new HashSet<>();
             stopWordsStr.lines().forEach(stopWords::add);
         }

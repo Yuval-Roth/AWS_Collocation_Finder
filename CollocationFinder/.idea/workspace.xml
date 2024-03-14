@@ -2,9 +2,7 @@
 <project version="4">
   <component name="ArtifactsWorkspaceSettings">
     <artifacts-to-build>
-      <artifact name="step1:jar" />
-      <artifact name="step2:jar" />
-      <artifact name="step3:jar" />
+      <artifact name="OutputCombiner:jar" />
     </artifacts-to-build>
   </component>
   <component name="AutoImportSettings">
@@ -22,10 +20,15 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="38712fba-5bfc-473f-a93a-bf4185f68234" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Step1/src/Step1.java" beforeDir="false" afterPath="$PROJECT_DIR$/Step1/src/Step1.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Step2/src/Step2.java" beforeDir="false" afterPath="$PROJECT_DIR$/Step2/src/Step2.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Step3/src/Step3.java" beforeDir="false" afterPath="$PROJECT_DIR$/Step3/src/Step3.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Main/src/CollocationFinder.java" beforeDir="false" afterPath="$PROJECT_DIR$/Main/src/CollocationFinder.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Main/src/META-INF/MANIFEST.MF" beforeDir="false" afterPath="$PROJECT_DIR$/Main/src/META-INF/MANIFEST.MF" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Step1/src/META-INF/MANIFEST.MF" beforeDir="false" afterPath="$PROJECT_DIR$/Step1/src/META-INF/MANIFEST.MF" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Step2/src/META-INF/MANIFEST.MF" beforeDir="false" afterPath="$PROJECT_DIR$/Step2/src/META-INF/MANIFEST.MF" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Step3/src/META-INF/MANIFEST.MF" beforeDir="false" afterPath="$PROJECT_DIR$/Step3/src/META-INF/MANIFEST.MF" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/simulation/src/emrSimulation/EMRSimulator.java" beforeDir="false" afterPath="$PROJECT_DIR$/simulation/src/emrSimulation/EMRSimulator.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/META-INF/MANIFEST.MF" beforeDir="false" afterPath="$PROJECT_DIR$/src/META-INF/MANIFEST.MF" afterDir="false" />
     </list>
     <list id="e1d2580c-fec9-453b-b142-f9bd3ac10412" name="Changes by adidi" comment="" />
     <option name="SHOW_DIALOG" value="false" />
@@ -60,6 +63,7 @@
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
     &quot;Application.CollocationFinder.executor&quot;: &quot;Run&quot;,
+    &quot;Application.Combiner.executor&quot;: &quot;Debug&quot;,
     &quot;Application.EMRSimulator.executor&quot;: &quot;Run&quot;,
     &quot;Application.LRUCache.executor&quot;: &quot;Run&quot;,
     &quot;Application.Step1.executor&quot;: &quot;Run&quot;,
@@ -82,7 +86,8 @@
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
     &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;onboarding.tips.debug.path&quot;: &quot;C:/Users/Yuval/git/Distributed_systems_assignment_2/CollocationFinder/OutputCombiner/src/Main.java&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Artifacts&quot;,
     &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
     &quot;project.structure.side.proportion&quot;: &quot;0.3402299&quot;,
     &quot;settings.editor.selected.configurable&quot;: &quot;project.propVCSSupport.DirectoryMappings&quot;,
@@ -95,8 +100,8 @@
       <recent name="C:\Users\Yuval\git\Distributed_systems_assignment_2\CollocationFinder\out\production" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
-      <recent name="C:\Users\Yuval\git\Distributed_systems_assignment_2\CollocationFinder" />
       <recent name="C:\Users\Yuval\git\Distributed_systems_assignment_2\CollocationFinder\out\production" />
+      <recent name="C:\Users\Yuval\git\Distributed_systems_assignment_2\CollocationFinder" />
       <recent name="C:\Users\Yuval\git\Distributed_systems_assignment_2\CollocationFinder\out\artifacts" />
       <recent name="C:\Users\Yuval\git\Distributed_systems_assignment_2\CollocationFinder\Job4\src" />
       <recent name="C:\Users\Yuval\git\Distributed_systems_assignment_2\CollocationFinder\Job3\src" />
@@ -108,11 +113,18 @@
       <recent name="" />
     </key>
   </component>
-  <component name="RunManager" selected="Application.EMRSimulator">
+  <component name="RunManager" selected="Application.CollocationFinder">
     <configuration name="CollocationFinder" type="Application" factoryName="Application" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="CollocationFinder" />
       <module name="main" />
-      <option name="PROGRAM_PARAMETERS" value="-minpmi 0.5 -relminpmi 0.2 -inputurl s3://datasets.elasticmapreduce/ngrams/books/20090715/eng-all/2gram/data " />
+      <option name="PROGRAM_PARAMETERS" value="-minpmi 0.5 -relminpmi 0.2 -inputurl s3://datasets.elasticmapreduce/ngrams/books/20090715/heb-all/2gram/data" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="Combiner" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="Combiner" />
+      <module name="OutputCombiner" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
@@ -162,25 +174,19 @@
     <list>
       <item itemvalue="Application.EMRSimulator" />
       <item itemvalue="Application.CollocationFinder" />
+      <item itemvalue="Application.Combiner" />
       <item itemvalue="Application.LRUCache" />
       <item itemvalue="Application.Step2" />
       <item itemvalue="Application.Step1" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Application.Combiner" />
         <item itemvalue="Application.Step1" />
         <item itemvalue="Application.LRUCache" />
         <item itemvalue="Application.Step2" />
       </list>
     </recent_temporary>
-  </component>
-  <component name="SharedIndexes">
-    <attachedChunks>
-      <set>
-        <option value="jdk-17.0.10-corretto-17.0.10-4caba194b151-5cd809f4" />
-        <option value="jdk-21.0.1-openjdk-21.0.1-4caba194b151-23eed401" />
-      </set>
-    </attachedChunks>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -207,6 +213,9 @@
       <workItem from="1710316795781" duration="36000" />
       <workItem from="1710316843943" duration="18962000" />
       <workItem from="1710361981172" duration="5789000" />
+      <workItem from="1710420394814" duration="48000" />
+      <workItem from="1710420455001" duration="2223000" />
+      <workItem from="1710422954110" duration="1284000" />
     </task>
     <servers />
   </component>
@@ -222,6 +231,17 @@
         <option value="Default.Subject" />
         <option value="Space.CommitStatus" />
       </list>
+    </option>
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
     </option>
   </component>
   <component name="VcsManagerConfiguration">
