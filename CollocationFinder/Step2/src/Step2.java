@@ -138,7 +138,7 @@ public class Step2 {
     public static class Step2Partitioner extends Partitioner<Text, Text> {
         public int getPartition(Text key, Text value, int numPartitions) {
             String[] keyTokens = key.toString().split(",");
-            return Integer.parseInt(String.valueOf(keyTokens[0].charAt(2))) % numPartitions;
+            return Integer.parseInt(keyTokens[0]) % numPartitions;
         }
     }
 
@@ -232,6 +232,7 @@ public class Step2 {
             job.setMapOutputValueClass(Text.class);
             job.setOutputKeyClass(Text.class);
             job.setOutputValueClass(DoubleWritable.class);
+            job.setNumReduceTasks(11);
             FileInputFormat.addInputPath(job, _inputPath);
             FileOutputFormat.setOutputPath(job, _outputPath);
             System.exit(job.waitForCompletion(true) ? 0 : 1);
@@ -248,7 +249,6 @@ public class Step2 {
         for (int i = 0; i < args.length; i++) {
             String arg = args[i].toLowerCase();
             String errorMessage;
-
             if (arg.equals("-inputurl")) {
                 errorMessage = "Missing input url\n";
                 try{
@@ -278,7 +278,6 @@ public class Step2 {
                 }
             }
         }
-
         if(_inputPath == null){
             printErrorAndExit("Argument for input url not found\n");
         }

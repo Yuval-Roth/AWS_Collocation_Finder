@@ -238,7 +238,7 @@ public class Step1 {
     public static class Step1Partitioner extends Partitioner<Text, LongWritable> {
         public int getPartition(Text key, LongWritable value, int numPartitions) {
             String[] keyTokens = key.toString().split(",");
-            return Integer.parseInt(String.valueOf(keyTokens[0].charAt(2))) % numPartitions;
+            return Integer.parseInt(keyTokens[0]) % numPartitions;
         }
     }
 
@@ -269,6 +269,7 @@ public class Step1 {
             job.setMapOutputValueClass(LongWritable.class);
             job.setOutputKeyClass(Text.class);
             job.setOutputValueClass(Text.class);
+            job.setNumReduceTasks(11);
             if(_compressed) {
                 job.setInputFormatClass(SequenceFileInputFormat.class);
             }
@@ -366,7 +367,6 @@ public class Step1 {
                 continue;
             }
         }
-
         if(_language == null){
             printErrorAndExit("Argument for language not found\n");
         }

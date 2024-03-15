@@ -131,7 +131,7 @@ public class Step3 {
     public static class Step3Partitioner extends Partitioner<Text, Text> {
         public int getPartition(Text key, Text value, int numPartitions) {
             String[] keyTokens = key.toString().split(",");
-            return Integer.parseInt(String.valueOf(keyTokens[0].charAt(2))) % numPartitions;
+            return Integer.parseInt(keyTokens[0]) % numPartitions;
         }
     }
 
@@ -197,6 +197,7 @@ public class Step3 {
             job.setMapOutputValueClass(Text.class);
             job.setOutputKeyClass(Text.class);
             job.setOutputValueClass(Text.class);
+            job.setNumReduceTasks(11);
             FileInputFormat.addInputPath(job, _inputPath);
             FileOutputFormat.setOutputPath(job, _outputPath);
             System.exit(job.waitForCompletion(true) ? 0 : 1);
@@ -215,7 +216,6 @@ public class Step3 {
         for (int i = 0; i < args.length; i++) {
             String arg = args[i].toLowerCase();
             String errorMessage;
-
             if (arg.equals("-minpmi")) {
                 errorMessage = "Missing minimum pmi\n";
                 try{

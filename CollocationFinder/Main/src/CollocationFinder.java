@@ -12,31 +12,47 @@ import java.util.UUID;
 
 public class CollocationFinder {
 
+    enum Language {
+        english,
+        hebrew
+    }
     // <S3>
     public static final String BUCKET_NAME = "distributed-systems-2024-bucket-yuval-adi";
     public static final String BUCKET_URL = "s3://" + BUCKET_NAME + "/";
-    // </S3>
-
-    // <APPLICATION DATA>
     public static final String HADOOP_JARS_URL = BUCKET_URL + "hadoop/jars/";
     public static final String HADOOP_OUTPUTS_URL = BUCKET_URL + "hadoop/outputs/";
+    // </S3>
+
+    // <CONSTANTS>
     public static final String JAR_STEP_ARGS = "%s -inputUrl %s -outputUrl %s";
     private static final String CREDENTIALS_PATH = getFolderPath() + "credentials.txt";
-    private static final String USAGE = ""; // TODO: WRITE USAGE
+    private static final String USAGE = """
+    Usage: java -jar CollocationFinder.jar -inputUrl <inputUrl> -minPmi <minPmi> -relMinPmi <relMinPmi>
+         -language <language> -instanceCount <instanceCount> [-compressed] [-corpusPercentage <corpusPercentage>]
+    
+    [-h | -help] := prints this message
+    -compressed := uses SequenceFileInputFormat when reading the input
+    -corpusPercentage <corpusPercentage> := the percentage of the corpus to use (default is 1.0)
+                                            use a value between 0.0 and 1.0
+    -language <language> := the language of the input corpus (either 'english' or 'hebrew')""";
+    // </CONSTANTS>
+
+    // <APPLICATION DATA>
     public static String inputUrl;
     private static Double minPmi;
     private static Double relMinPmi;
-
-    private static final int INSTANCE_COUNT = 9;
-    private static final String LANGUAGE = "hebrew";
-    private static final String STOP_WORDS_FILE = "heb_stop_words.txt";
-    private static final String CORPUS_PERCENTAGE = "1.0";
-    private static final boolean compressed = true;
+    private static Integer instanceCount;
+    private static Language language;
+    private static String stopWordsFile;
+    private static Double corpusPercentage;
+    private static boolean compressed;
     // </APPLICATION DATA>
 
     public static void main(String[] args) {
 
         readArgs(args);
+
+        stopWordsFile = language.equals(Language.english) ? "eng_stop_words.txt" : "heb_stop_words.txt";
 
         AWSCredentialsProvider credentialsProvider;
 
@@ -55,7 +71,7 @@ public class CollocationFinder {
         List<StepConfig> stepConfigs = new LinkedList<>();
         String[] firstArg = {
                 "-stopWordsFile %s -language %s -corpusPercentage %s %s".formatted(
-                        STOP_WORDS_FILE,LANGUAGE,CORPUS_PERCENTAGE, compressed ? "-compressed" : ""),
+                        stopWordsFile, language, corpusPercentage, compressed ? "-compressed" : ""),
                 "",
                 "-relMinPmi %f -minPmi %f".formatted(relMinPmi, minPmi)
         };
@@ -79,10 +95,12 @@ public class CollocationFinder {
         System.out.println("\nfinal output file will be located at "+ output);
 
         JobFlowInstancesConfig instances = new JobFlowInstancesConfig()
-                .withInstanceCount(INSTANCE_COUNT)
-                .withMasterInstanceType(InstanceType.M4Large.toString())
-                .withSlaveInstanceType(InstanceType.M4Large.toString())
-                .withHadoopVersion("3.3.6").withEc2KeyName("vockey")
+                .withInstanceCount(instanceCount)
+//                .withMasterInstanceType(InstanceType.M4Large.toString())
+//                .withSlaveInstanceType(InstanceType.M4Large.toString())
+                .withMasterInstanceType(InstanceType.M4Xlarge.toString())
+                .withSlaveInstanceType(InstanceType.M4Xlarge.toString())
+                .withHadoopVersion("2.9.2").withEc2KeyName("vockey")
                 .withKeepJobFlowAliveWhenNoSteps(false)
                 .withPlacement(new PlacementType("us-east-1a"));
 
@@ -93,7 +111,7 @@ public class CollocationFinder {
                 .withLogUri(BUCKET_URL+"hadoop/logs/")
                 .withServiceRole("EMR_DefaultRole")
                 .withJobFlowRole("EMR_EC2_DefaultRole")
-                .withReleaseLabel("emr-7.0.0");
+                .withReleaseLabel("emr-5.11.0");
 
         RunJobFlowResult runJobFlowResult = mapReduce.runJobFlow(runFlowRequest);
         String jobFlowId = runJobFlowResult.getJobFlowId();
@@ -120,13 +138,64 @@ public class CollocationFinder {
     private static void readArgs(String[] args) {
 
         List<String> argsList = new LinkedList<>();
+        argsList.add("-h");
+        argsList.add("-help");
         argsList.add("-inputurl");
         argsList.add("-minpmi");
         argsList.add("-relminpmi");
-        argsList.add("-debug");
+        argsList.add("-corpuspercentage");
+        argsList.add("-language");
+        argsList.add("-compressed");
+        argsList.add("-instancecount");
         for (int i = 0; i < args.length; i++) {
             String arg = args[i].toLowerCase();
             String errorMessage;
+            if(arg.equals("-instancecount")){
+                errorMessage = "Missing instance count\n";
+                try{
+                    if(argsList.contains(args[i+1])){
+                        printUsageAndExit(errorMessage);
+                    }
+                    instanceCount = Integer.valueOf(args[i+1]);
+                    i++;
+                    continue;
+                } catch (NumberFormatException e){
+                    System.out.println();
+                    printUsageAndExit("Invalid instance count\n");
+                }
+            }
+            if(arg.equals("-corpuspercentage")){
+                errorMessage = "Missing corpus percentage\n";
+                try{
+                    if(argsList.contains(args[i+1])){
+                        printUsageAndExit(errorMessage);
+                    }
+                    corpusPercentage = Double.valueOf(args[i+1]);
+                    i++;
+                    continue;
+                } catch (NumberFormatException e){
+                    System.out.println();
+                    printUsageAndExit("Invalid corpus percentage\n");
+                }
+            }
+            if (arg.equals("-compressed")){
+                compressed = true;
+                continue;
+            }
+            if (arg.equals("-language")) {
+                errorMessage = "Bad language argument\n";
+                try{
+                    if(argsList.contains(args[i+1])){
+                        printUsageAndExit(errorMessage);
+                    }
+                    language = Language.valueOf(args[i+1]);
+                    i++;
+                    continue;
+                } catch (IllegalArgumentException e){
+                    System.out.println();
+                    printUsageAndExit("Invalid language. either 'english' or 'hebrew' are available\n");
+                }
+            }
             if (arg.equals("-inputurl")) {
                 errorMessage = "Missing input url\n";
                 try{
@@ -141,7 +210,6 @@ public class CollocationFinder {
                     printUsageAndExit(errorMessage);
                 }
             }
-
             if (arg.equals("-minpmi")) {
                 errorMessage = "Missing minimum pmi\n";
                 try{
@@ -189,11 +257,26 @@ public class CollocationFinder {
                     printUsageAndExit(errorMessage);
                 }
             }
-
+            if(arg.equals("-h") || arg.equals("-help")){
+                printUsageAndExit("");
+            }
             System.out.println();
             printUsageAndExit("Unknown argument: %s\n".formatted(arg));
         }
 
+        if(corpusPercentage == null){
+            corpusPercentage = 1.0;
+        }
+
+        if(corpusPercentage < 0.0 || corpusPercentage > 1.0){
+            printUsageAndExit("Corpus percentage must be between 0 and 1\n");
+        }
+        if(instanceCount == null){
+            printUsageAndExit("Argument for instance count not found\n");
+        }
+        if(language == null){
+            printUsageAndExit("Argument for language not found\n");
+        }
         if(minPmi == null){
             printUsageAndExit("Argument for minimum pmi not found\n");
         }
