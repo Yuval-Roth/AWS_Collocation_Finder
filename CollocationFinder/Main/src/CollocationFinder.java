@@ -46,6 +46,7 @@ public class CollocationFinder {
     private static String stopWordsFile;
     private static Double corpusPercentage;
     private static boolean compressed;
+    private static Long splitSize;
     // </APPLICATION DATA>
 
     public static void main(String[] args) {
@@ -70,8 +71,10 @@ public class CollocationFinder {
 
         List<StepConfig> stepConfigs = new LinkedList<>();
         String[] firstArg = {
-                "-stopWordsFile %s -language %s -corpusPercentage %s %s".formatted(
-                        stopWordsFile, language, corpusPercentage, compressed ? "-compressed" : ""),
+                "-stopWordsFile %s -language %s -corpusPercentage %s %s %s".formatted(
+                        stopWordsFile, language, corpusPercentage,
+                        compressed ? "-compressed" : "",
+                        splitSize == null ? "" : "-splitSize %d".formatted(splitSize)),
                 "",
                 "-relMinPmi %f -minPmi %f".formatted(relMinPmi, minPmi)
         };
@@ -100,7 +103,7 @@ public class CollocationFinder {
 //                .withSlaveInstanceType(InstanceType.M4Large.toString())
                 .withMasterInstanceType(InstanceType.M4Xlarge.toString())
                 .withSlaveInstanceType(InstanceType.M4Xlarge.toString())
-                .withHadoopVersion("2.9.2").withEc2KeyName("vockey")
+                .withHadoopVersion("3.3.6").withEc2KeyName("vockey")
                 .withKeepJobFlowAliveWhenNoSteps(false)
                 .withPlacement(new PlacementType("us-east-1a"));
 
@@ -111,7 +114,7 @@ public class CollocationFinder {
                 .withLogUri(BUCKET_URL+"hadoop/logs/")
                 .withServiceRole("EMR_DefaultRole")
                 .withJobFlowRole("EMR_EC2_DefaultRole")
-                .withReleaseLabel("emr-5.11.0");
+                .withReleaseLabel("emr-7.0.0");
 
         RunJobFlowResult runJobFlowResult = mapReduce.runJobFlow(runFlowRequest);
         String jobFlowId = runJobFlowResult.getJobFlowId();
@@ -157,6 +160,20 @@ public class CollocationFinder {
                         printUsageAndExit(errorMessage);
                     }
                     instanceCount = Integer.valueOf(args[i+1]);
+                    i++;
+                    continue;
+                } catch (NumberFormatException e){
+                    System.out.println();
+                    printUsageAndExit("Invalid instance count\n");
+                }
+            }
+            if(arg.equals("-splitsize")){
+                errorMessage = "Bad split size argument\n";
+                try{
+                    if(argsList.contains(args[i+1])){
+                        printUsageAndExit(errorMessage);
+                    }
+                    splitSize = Long.valueOf(args[i+1]);
                     i++;
                     continue;
                 } catch (NumberFormatException e){

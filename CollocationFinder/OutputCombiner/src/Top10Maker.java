@@ -8,8 +8,8 @@ public class Top10Maker {
 
     public static void main (String[] args) throws Exception{
 
-        if(args.length != 1){
-            System.out.println("Usage: <threshold>");
+        if(args.length != 2){
+            System.out.println("Usage: <threshold> <count from each decade>");
             return;
         }
 
@@ -22,6 +22,7 @@ public class Top10Maker {
                 .toArray(String[]::new);
 
         double threshold = Double.parseDouble(args[0]);
+        Integer countFromEachDecade = Integer.parseInt(args[1]);
 
         for(String item : itemsInFolder){
             try(BufferedReader reader = new BufferedReader(new FileReader(folderPath + item))){
@@ -31,7 +32,7 @@ public class Top10Maker {
                     if(Double.parseDouble(tokens[3]) > threshold) continue;
                     if(tokens[1].equals(tokens[2])) continue;
                     int count = decadesCounter.getOrDefault(tokens[0],0);
-                    if(count > 10){
+                    if(count > countFromEachDecade){
                         continue;
                     }
                     decadesCounter.put(tokens[0],count+1);

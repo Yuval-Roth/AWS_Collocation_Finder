@@ -37,6 +37,7 @@ public class Step1 {
     private static boolean _compressed;
     private static Double _corpusPercentage;
     private static Language _language;
+    private static Long _splitSize;
 
     public static class Step1Mapper extends Mapper<LongWritable, Text, Text, LongWritable> {
 
@@ -250,12 +251,18 @@ public class Step1 {
         System.out.println("[DEBUG] stop words file: " + _stopWordsFile);
         System.out.println("[DEBUG] language: " + _language);
         System.out.println("[DEBUG] corpus percentage: " + _corpusPercentage);
-        System.out.printf("[DEBUG] compressed: "+ _compressed );
+        System.out.println("[DEBUG] compressed: "+ _compressed );
+        if(_splitSize != null){
+            System.out.println("[DEBUG] max split size: " + _splitSize);
+        }
         Configuration conf = new Configuration();
         conf.set("stopWordsFile", _stopWordsFile);
         conf.set("language", _language.toString());
         if(_corpusPercentage != null) {
             conf.setDouble("corpusPercentage", _corpusPercentage);
+        }
+        if(_splitSize != null) {
+            conf.setLong("mapreduce.input.fileinputformat.split.maxsize", _splitSize);
         }
         try {
             Job job = Job.getInstance(conf, "Step1");
@@ -289,6 +296,7 @@ public class Step1 {
         argsList.add("-corpuspercentage");
         argsList.add("-compressed");
         argsList.add("-language");
+        argsList.add("-splitsize");
         for (int i = 0; i < args.length; i++) {
             String arg = args[i].toLowerCase();
             String errorMessage;
@@ -301,7 +309,7 @@ public class Step1 {
                     _language = Language.valueOf(args[i+1]);
                     i++;
                     continue;
-                } catch (IllegalArgumentException e){
+                } catch (IllegalArgumentException | IndexOutOfBoundsException e){
                     System.out.println();
                     printErrorAndExit("Language can be either 'hebrew' or 'english'\n");
                 }
@@ -357,7 +365,21 @@ public class Step1 {
                     _corpusPercentage = Double.parseDouble(args[i+1]);
                     i++;
                     continue;
-                } catch (IndexOutOfBoundsException e){
+                } catch (NumberFormatException | IndexOutOfBoundsException e){
+                    System.out.println();
+                    printErrorAndExit(errorMessage);
+                }
+            }
+            if (arg.equals("-splitsize")) {
+                errorMessage = "Bad split size argument\n";
+                try{
+                    if(argsList.contains(args[i+1])){
+                        printErrorAndExit(errorMessage);
+                    }
+                    _splitSize = Long.parseLong(args[i+1]);
+                    i++;
+                    continue;
+                } catch (NumberFormatException | IndexOutOfBoundsException e){
                     System.out.println();
                     printErrorAndExit(errorMessage);
                 }
